@@ -50,7 +50,6 @@
     /* YouTube / Video responsive container */
     .video-frame {
       width: 100%;
-      /* aspect-ratio: 16 / 9; Removed fixed ratio to adapt to video content */
       background: #000;
       border-radius: 14px;
       overflow: hidden;
@@ -58,20 +57,38 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 300px;
+      /* Remove fixed height to let content dictate size, but keep constraints */
+      min-height: 200px; 
     }
+    
+    /* For YouTube Iframe: Make it fill container but respect 16:9 or similar */
     .video-frame iframe {
       width: 100%;
-      aspect-ratio: 16/9;
       height: 100%;
+      aspect-ratio: 16/9; /* Default base aspect ratio */
       object-fit: cover;
       display: block;
     }
+
+    /* For HTML5 Video (Uploaded): Remove constraints so it fits naturally */
     .video-frame video {
       width: 100%;
-      height: auto;
-      max-height: 80vh;
+      height: auto; 
+      max-height: 80vh; /* Prevent it from being taller than screen */
+      object-fit: contain; /* Ensure full video is visible without cropping */
       display: block;
+    }
+    
+    /* SPECIAL FIX for Vertical Videos on Mobile/Desktop */
+    /* If the video is vertical, we don't want black bars on sides if possible */
+    /* We let the container shrink/grow to fit the video content */
+    
+    .video-container-wrapper {
+        display: flex;
+        justify-content: center;
+        background: black; /* Or transparent if you prefer */
+        border-radius: 14px;
+        overflow: hidden;
     }
   </style>
 </head>
@@ -184,17 +201,17 @@
         <div class="order-2 lg:order-1 relative">
           <div class="absolute -top-4 -left-4 w-full h-full border border-stone-300 z-0 rounded-2xl"></div>
 
-          <div class="relative z-10 shadow-lg w-full bg-black rounded-2xl overflow-hidden">
-            <div id="about-video-container" class="video-frame">
+          <div class="relative z-10 shadow-lg w-full bg-black rounded-2xl overflow-hidden video-container-wrapper">
+            <div id="about-video-container" class="video-frame w-full">
               <!-- injected by JS: YouTube embed -->
             </div>
 
-            <div class="p-3 bg-white/70 flex items-center justify-between">
-              <span class="text-xs text-stone-600 font-serif-text">
+            <div class="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between">
+              <span class="text-xs text-stone-200 font-serif-text">
                 <span data-i18n="video.caption">Process video (loop)</span>
               </span>
-              <button id="video-edit-btn" class="hidden bg-black/70 text-white px-3 py-2 rounded hover:bg-[#a83f39] transition-colors flex items-center gap-2 text-xs">
-                <i data-lucide="edit" class="w-4 h-4"></i> <span data-i18n="video.change">Change Video</span>
+              <button id="video-edit-btn" class="hidden bg-white/20 hover:bg-[#a83f39] text-white px-3 py-1 rounded backdrop-blur-sm transition-colors flex items-center gap-2 text-xs border border-white/30">
+                <i data-lucide="edit" class="w-3 h-3"></i> <span data-i18n="video.change">Change</span>
               </button>
             </div>
           </div>
@@ -873,27 +890,34 @@ async function loadAboutVideo() {
         loop
         muted
         playsinline
-        class="w-full h-auto"
-        style="max-height: 80vh;"
+        class="w-full h-full object-contain"
+        style="max-height: 70vh;"
       >
         Your browser does not support the video tag.
       </video>
     `;
+    // Update container style to fit content tighter
+    $("about-video-container").style.aspectRatio = "unset";
+    $("about-video-container").style.height = "auto";
     return;
   }
 
   let shortsId = data.shortsId || DEFAULT_SHORTS_ID;
   const src = `https://www.youtube.com/embed/${shortsId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${shortsId}&rel=0&modestbranding=1`;
 
+  // YouTube Shorts usually vertical (9:16)
+  // We set a vertical aspect ratio for iframe to minimize black bars if it is indeed a Short
   $("about-video-container").innerHTML = `
     <iframe
       src="${src}"
       title="YouTube video player"
       frameborder="0"
       allow="autoplay; encrypted-media; picture-in-picture"
+      class="w-full h-full aspect-[9/16] md:aspect-[3/4] object-cover"
       allowfullscreen>
     </iframe>
   `;
+  $("about-video-container").style.aspectRatio = "unset"; 
 }
 
 // Admin: Upload video file
