@@ -2,10 +2,9 @@
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Hua Qing | Fine Art of Gongbi</title>
-  <meta name="description" content="Discover the timeless serenity of Chinese Gongbi painting by Hua Qing. Hand-painted masterpieces on silk.">
-
+  <meta name="description" content="Discover the timeless serenity of Chinese Gongbi painting by Hua Qing. Hand-painted masterpieces on silk." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,51 +27,41 @@
     .font-calligraphy{font-family:'Ma Shan Zheng',cursive;}
     .font-song-art{font-family:'ZCOOL XiaoWei',serif;}
     .font-serif-text{font-family:'Noto Serif SC',serif;}
-
-    ::-webkit-scrollbar{width:8px;}
-    ::-webkit-scrollbar-track{background:#f1f1f1;}
-    ::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px;}
-
     .seal{
-      display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;
-      background-color:var(--seal-red);color:#fff;border-radius:4px;font-size:18px;
-      border:2px solid #8a2e29;box-shadow:2px 2px 4px rgba(0,0,0,0.2);
-      font-family:'Ma Shan Zheng',cursive;line-height:1;padding-top:4px;
+      display:inline-flex;align-items:center;justify-content:center;
+      width:48px;height:48px;background-color:var(--seal-red);color:white;
+      border-radius:4px;font-size:18px;border:2px solid #8a2e29;
+      box-shadow:2px 2px 4px rgba(0,0,0,0.2);font-family:'Ma Shan Zheng',cursive;
+      line-height:1;padding-top:4px;
     }
-    .loader{
-      border:3px solid #f3f3f3;border-radius:50%;border-top:3px solid #a83f39;
-      width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;
-    }
-    @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-
     .nav-link{position:relative;}
     .nav-link::after{
       content:'';position:absolute;width:0;height:1px;bottom:0;left:50%;
-      background-color:#a83f39;transition:all .3s ease;transform:translateX(-50%);
+      background-color:var(--seal-red);transition:all .3s ease;transform:translateX(-50%);
     }
     .nav-link:hover::after{width:80%;}
-
-    .drop-zone{border:2px dashed #a83f39;background:#fff5f5;transition:all .3s;}
+    .loader{
+      border:3px solid #f3f3f3;border-radius:50%;border-top:3px solid var(--seal-red);
+      width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;
+    }
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .drop-zone{border:2px dashed var(--seal-red);background:#fff5f5;transition:all .2s;}
     .drop-zone.dragover{background:#ffe0e0;border-color:red;}
-
-    /* Responsive video container (fits any aspect ratio) */
-    .yt-wrap{
-      position:relative;width:100%;
-      aspect-ratio: 9 / 16; /* Shorts default */
-      background:#000;border-radius: 12px;
+    /* YouTube / Video responsive container */
+    .video-frame{
+      width:100%;
+      aspect-ratio:16 / 9;
+      background:#000;
+      border-radius:14px;
       overflow:hidden;
     }
-    @media (min-width: 1024px){
-      .yt-wrap{ aspect-ratio: 16 / 9; } /* on desktop, make it wider */
+    .video-frame iframe,
+    .video-frame video{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
     }
-    .yt-wrap iframe{
-      position:absolute;inset:0;width:100%;height:100%;
-      border:0;
-    }
-
-    /* admin UI toggles */
-    .admin-only{display:none;}
-    body.is-admin .admin-only{display:block;}
   </style>
 </head>
 
@@ -82,7 +71,6 @@
   <nav class="fixed w-full z-50 bg-[#fdfbf7]/90 backdrop-blur-sm border-b border-stone-200 transition-all duration-300" id="navbar">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-20">
-
         <div class="flex-shrink-0 flex items-center gap-4">
           <div class="seal" data-i18n="seal">Hua</div>
           <span class="text-xl tracking-widest text-stone-800 font-bold pt-1">HUA QING ART</span>
@@ -95,28 +83,35 @@
           <a href="#gallery" class="nav-link text-stone-600 hover:text-stone-900 px-1 py-2 text-sm uppercase tracking-widest transition-colors" data-i18n="nav.gallery">Gallery</a>
           <a href="#contact" class="bg-stone-800 text-stone-100 px-6 py-2 text-xs uppercase tracking-widest hover:bg-[#a83f39] transition-colors duration-300 shadow-lg" data-i18n="nav.contact">Collect</a>
 
-          <button onclick="window.toggleLanguage()" class="ml-4 text-xs font-bold border border-stone-300 px-3 py-1 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif">
+          <button id="lang-btn" class="ml-4 text-xs font-bold border border-stone-300 px-3 py-1 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif">
             <span id="lang-btn-text">中</span>
           </button>
 
-          <!-- Auth UI (wired in Part 2) -->
-          <div id="user-auth-section" class="ml-2">
-            <button onclick="window.openAuthModal('login')" class="flex items-center gap-2 text-stone-600 hover:text-[#a83f39]">
+          <!-- Auth display -->
+          <div id="user-auth-section" class="ml-2 flex items-center gap-3">
+            <button id="signin-btn" class="flex items-center gap-2 text-stone-600 hover:text-[#a83f39]">
               <i data-lucide="user" class="w-5 h-5"></i>
               <span id="user-name-display" class="text-xs uppercase">Sign In</span>
+            </button>
+
+            <button id="signout-btn" class="hidden text-xs border border-stone-300 px-3 py-1 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif">
+              Sign out
+            </button>
+
+            <button id="admin-btn" class="hidden text-xs border border-[#a83f39] text-[#a83f39] px-3 py-1 rounded hover:bg-[#a83f39] hover:text-white transition-colors font-serif">
+              Admin
             </button>
           </div>
         </div>
 
         <div class="md:hidden flex items-center gap-4">
-          <button onclick="window.toggleLanguage()" class="text-xs font-bold border border-stone-300 px-2 py-1 rounded">
+          <button id="lang-btn-mobile" class="text-xs font-bold border border-stone-300 px-2 py-1 rounded">
             <span id="lang-btn-text-mobile">中</span>
           </button>
           <button id="mobile-menu-btn" class="text-stone-600 hover:text-stone-900 focus:outline-none">
             <i data-lucide="menu" class="w-6 h-6"></i>
           </button>
         </div>
-
       </div>
     </div>
 
@@ -126,7 +121,8 @@
         <a href="#about-gongbi" class="block px-3 py-2 text-stone-600 hover:text-[#a83f39] font-serif text-lg" data-i18n="nav.source">The Craft</a>
         <a href="#artist" class="block px-3 py-2 text-stone-600 hover:text-[#a83f39] font-serif text-lg" data-i18n="nav.artist">Artist</a>
         <a href="#gallery" class="block px-3 py-2 text-stone-600 hover:text-[#a83f39] font-serif text-lg" data-i18n="nav.gallery">Gallery</a>
-        <button onclick="window.openAuthModal('login')" class="block w-full px-3 py-2 text-stone-600 hover:text-[#a83f39] text-center font-serif text-lg">Sign In</button>
+        <button id="signin-btn-mobile" class="block w-full px-3 py-2 text-stone-600 hover:text-[#a83f39] text-center font-serif text-lg">Sign In</button>
+        <button id="signout-btn-mobile" class="hidden w-full px-3 py-2 text-stone-600 hover:text-[#a83f39] text-center font-serif text-lg">Sign out</button>
       </div>
     </div>
   </nav>
@@ -139,17 +135,25 @@
     </div>
 
     <div class="relative z-10 text-center flex flex-col items-center p-6 w-full px-4">
-      <h2 class="text-[#a83f39] text-sm md:text-base tracking-[0.3em] md:tracking-[0.5em] mb-6 uppercase font-bold" data-i18n="hero.subtitle">The Ancient Art of Gongbi</h2>
+      <h2 class="text-[#a83f39] text-sm md:text-base tracking-[0.3em] md:tracking-[0.5em] mb-6 uppercase font-bold" data-i18n="hero.subtitle">
+        The Ancient Art of Gongbi
+      </h2>
+
       <h1 class="text-4xl sm:text-5xl md:text-7xl mb-8 text-stone-800 font-serif italic tracking-wide whitespace-nowrap" data-i18n="hero.title">
         Timeless Serenity, Painted in Silk
       </h1>
-      <p class="text-lg md:text-2xl text-stone-600 font-light italic mb-12" data-i18n="hero.desc">"Where the microscopic world meets infinite mindfulness."</p>
+
+      <p class="text-lg md:text-2xl text-stone-600 font-light italic mb-12" data-i18n="hero.desc">
+        "Where the microscopic world meets infinite mindfulness."
+      </p>
 
       <a href="#gallery" class="group relative inline-flex items-center justify-center px-10 py-4 overflow-hidden font-medium text-stone-600 border border-stone-400 rounded-full transition duration-300 ease-out hover:border-[#a83f39] hover:text-[#a83f39]">
         <span class="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-[#a83f39] group-hover:translate-x-0 ease">
           <i data-lucide="arrow-right" class="w-6 h-6"></i>
         </span>
-        <span class="absolute flex items-center justify-center w-full h-full text-stone-600 transition-all duration-300 transform group-hover:translate-x-full ease font-serif text-lg uppercase tracking-widest" data-i18n="hero.button">Explore Collection</span>
+        <span class="absolute flex items-center justify-center w-full h-full text-stone-600 transition-all duration-300 transform group-hover:translate-x-full ease font-serif text-lg uppercase tracking-widest" data-i18n="hero.button">
+          Explore Collection
+        </span>
         <span class="relative invisible font-serif text-lg" data-i18n="hero.button">Explore Collection</span>
       </a>
     </div>
@@ -161,50 +165,42 @@
     </div>
   </section>
 
-  <!-- ABOUT GONGBI -->
+  <!-- ABOUT: GONGBI -->
   <section id="about-gongbi" class="py-24 bg-stone-100/50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-        <!-- Video -->
-        <div class="order-2 lg:order-1 relative group">
-          <div class="absolute -top-4 -left-4 w-full h-full border border-stone-300 z-0"></div>
+        <div class="order-2 lg:order-1 relative">
+          <div class="absolute -top-4 -left-4 w-full h-full border border-stone-300 z-0 rounded-2xl"></div>
 
-          <div class="relative z-10 shadow-lg w-full bg-black rounded-xl overflow-hidden">
-            <div id="about-video-wrap" class="yt-wrap">
-              <!-- Default: your shorts (loop + autoplay + mute) -->
-              <iframe
-                id="about-video-iframe"
-                src="https://www.youtube.com/embed/zN0VzZRzlqM?autoplay=1&mute=1&loop=1&playlist=zN0VzZRzlqM&controls=0&playsinline=1&modestbranding=1&rel=0"
-                allow="autoplay; encrypted-media"
-                title="Hua Qing Intro Video"
-              ></iframe>
+          <div class="relative z-10 shadow-lg w-full bg-black rounded-2xl overflow-hidden">
+            <div id="about-video-container" class="video-frame">
+              <!-- injected by JS: YouTube embed -->
             </div>
-          </div>
 
-          <!-- Admin change video (wired in Part 2) -->
-          <div class="absolute top-2 right-2 z-20 admin-only">
-            <button onclick="window.adminEditAboutVideo()" class="bg-black/70 text-white p-2 rounded hover:bg-[#a83f39] transition-colors flex items-center gap-2 text-xs">
-              <i data-lucide="edit"></i> Change Video
-            </button>
+            <div class="p-3 bg-white/70 flex items-center justify-between">
+              <span class="text-xs text-stone-600 font-serif-text">
+                <span data-i18n="video.caption">Process video (loop)</span>
+              </span>
+              <button id="video-edit-btn" class="hidden bg-black/70 text-white px-3 py-2 rounded hover:bg-[#a83f39] transition-colors flex items-center gap-2 text-xs">
+                <i data-lucide="edit" class="w-4 h-4"></i> <span data-i18n="video.change">Change Video</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Text -->
         <div class="order-1 lg:order-2">
           <div class="flex items-center gap-4 mb-6">
             <div class="h-px w-16 bg-[#a83f39]"></div>
-            <span class="text-[#a83f39] uppercase tracking-widest text-sm font-bold" data-i18n="gongbi.label">The Craft</span>
+            <span class="text-[#a83f39] uppercase tracking-widest text-sm font-bold" data-i18n="gongbi.label">The Origin</span>
           </div>
 
-          <h2 class="text-4xl md:text-5xl font-serif mb-8 text-stone-800 italic" data-i18n="gongbi.title">
-            Origins, Precision, Stillness
-          </h2>
+          <h2 class="text-4xl md:text-5xl font-serif mb-8 text-stone-800 italic" data-i18n="gongbi.title">Gongbi: Precision and Poise</h2>
 
           <div class="space-y-6 text-stone-600 text-lg leading-loose font-serif-text">
             <p data-i18n="gongbi.p1"></p>
             <p data-i18n="gongbi.p2"></p>
-            <p class="italic text-stone-500" data-i18n="gongbi.p3"></p>
+            <p data-i18n="gongbi.p3" class="italic text-stone-500"></p>
           </div>
 
           <ul class="space-y-4 font-serif text-lg mt-8">
@@ -216,9 +212,13 @@
               <i data-lucide="droplets" class="text-[#a83f39] w-5 h-5 flex-shrink-0"></i>
               <span class="text-stone-700" data-i18n="gongbi.list2"></span>
             </li>
+            <li class="flex items-center gap-3">
+              <i data-lucide="layers" class="text-[#a83f39] w-5 h-5 flex-shrink-0"></i>
+              <span class="text-stone-700" data-i18n="gongbi.list3"></span>
+            </li>
           </ul>
-
         </div>
+
       </div>
     </div>
   </section>
@@ -228,27 +228,22 @@
     <div class="max-w-5xl mx-auto px-4 text-center">
 
       <div class="mb-12 inline-block relative group">
-        <!-- Avatar -->
-        <div id="artist-img-container"
-             class="relative w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-xl cursor-pointer"
-             title="Admin: drag & drop to update (after Part 3)"
-        >
-          <img id="artist-img"
-               src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=2488&auto=format&fit=crop"
-               alt="Artist Portrait"
-               class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity admin-only">
-            <span class="text-white text-xs px-2">Admin: Drag & Drop to Update</span>
-          </div>
+        <div class="relative w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-xl">
+          <img id="artist-img" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=2488&auto=format&fit=crop" alt="Artist Portrait" class="w-full h-full object-cover">
+          <label id="artist-upload-overlay" class="hidden absolute inset-0 bg-black/50 items-center justify-center text-white text-xs cursor-pointer">
+            <span data-i18n="artist.uploadTip">Admin: Click to upload avatar</span>
+            <input id="artist-file-input" type="file" accept="image/*" class="hidden">
+          </label>
         </div>
 
         <h2 class="text-5xl font-serif text-stone-800 mb-2 italic" data-i18n="artist.name">Hua Qing</h2>
-        <p class="text-[#a83f39] font-sans text-xs uppercase tracking-[0.3em]" data-i18n="artist.title">Contemporary Gongbi Artist</p>
+        <p class="text-[#a83f39] font-sans text-xs uppercase tracking-[0.3em]" data-i18n="artist.title">Gongbi Artist</p>
       </div>
 
       <div class="prose prose-stone mx-auto text-xl leading-loose text-stone-600 max-w-3xl font-serif-text">
         <p data-i18n="artist.bio1" class="mb-6"></p>
-        <p data-i18n="artist.bio2"></p>
+        <p data-i18n="artist.bio2" class="mb-6"></p>
+        <p data-i18n="artist.bio3"></p>
       </div>
 
       <div class="mt-12 flex justify-center gap-16">
@@ -265,7 +260,6 @@
           <span class="text-xs text-stone-500 tracking-widest uppercase mt-2" data-i18n="artist.stat3">Collections</span>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -277,22 +271,13 @@
         <h2 class="text-5xl font-serif text-stone-800 italic" data-i18n="gallery.title">Ink & Rhythm</h2>
       </div>
 
-      <!-- Filters -->
       <div class="flex justify-center gap-8 mb-12 text-sm text-stone-500 uppercase tracking-widest font-sans">
-        <button onclick="window.filterGallery('all')" class="text-[#a83f39] border-b border-[#a83f39] pb-1 filter-btn" data-filter="all" data-i18n="gallery.filter.all">All Works</button>
-        <button onclick="window.filterGallery('flower')" class="hover:text-stone-800 transition-colors filter-btn" data-filter="flower" data-i18n="gallery.filter.flower">Flowers</button>
-        <button onclick="window.filterGallery('animal')" class="hover:text-stone-800 transition-colors filter-btn" data-filter="animal" data-i18n="gallery.filter.animal">Animals</button>
-        <button onclick="window.filterGallery('bird_flower')" class="hover:text-stone-800 transition-colors filter-btn" data-filter="bird_flower" data-i18n="gallery.filter.bird_flower">Birds & Flowers</button>
+        <button class="text-[#a83f39] border-b border-[#a83f39] pb-1 filter-btn" data-filter="all" data-i18n="gallery.filter.all">All</button>
+        <button class="hover:text-stone-800 transition-colors filter-btn" data-filter="flower" data-i18n="gallery.filter.flower">Flowers</button>
+        <button class="hover:text-stone-800 transition-colors filter-btn" data-filter="animal" data-i18n="gallery.filter.animal">Animals</button>
+        <button class="hover:text-stone-800 transition-colors filter-btn" data-filter="bird_flower" data-i18n="gallery.filter.bird_flower">Birds & Flowers</button>
       </div>
 
-      <!-- Admin add -->
-      <div class="max-w-7xl mx-auto mb-8 flex justify-center admin-only">
-        <button id="add-artwork-btn" onclick="window.openAddModal()" class="px-6 py-3 bg-[#a83f39] text-white rounded-full shadow hover:bg-red-800 transition flex items-center gap-2">
-          <i data-lucide="plus"></i> <span data-i18n="admin.addWork">Add New Artwork</span>
-        </button>
-      </div>
-
-      <!-- Grid (wired in Part 2/3) -->
       <div id="gallery-grid" class="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8 min-h-[400px]">
         <div class="col-span-full flex justify-center items-center h-40 w-full">
           <div class="loader"></div>
@@ -311,10 +296,12 @@
 
           <div class="space-y-6 font-sans">
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-[#a83f39]"><i data-lucide="mail"></i></div>
+              <div class="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-[#a83f39]">
+                <i data-lucide="mail"></i>
+              </div>
               <div>
                 <h4 class="text-white text-xs uppercase tracking-widest">Email</h4>
-                <p class="text-stone-400 text-sm" id="contact-email">contact@huaqing-art.com</p>
+                <p class="text-stone-400 text-sm">contact@huaqing-art.com</p>
               </div>
             </div>
             <div class="flex items-center gap-4">
@@ -352,127 +339,120 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
   <footer class="bg-stone-950 text-stone-600 py-12 text-center text-sm border-t border-stone-900 relative">
     <p class="mb-2 font-serif">&copy; 2024 Hua Qing Art. All rights reserved.</p>
     <p class="font-serif italic text-xs mb-8" data-i18n="footer.tagline">Designed for the beauty of tranquility.</p>
-
-    <div class="mt-4 flex items-center justify-center gap-3">
-      <button onclick="window.openAdminModal()" class="text-stone-600 hover:text-stone-400 text-[10px] font-sans border border-stone-800 px-3 py-1 rounded transition-colors uppercase tracking-widest">
-        Admin Access
-      </button>
-      <span id="admin-badge" class="hidden text-[10px] text-[#a83f39] uppercase tracking-widest font-sans">Admin Enabled</span>
-    </div>
   </footer>
 
   <!-- AUTH MODAL -->
   <div id="authModal" class="fixed inset-0 z-[80] hidden bg-black/80 flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-lg max-w-sm w-full shadow-2xl relative">
-      <button onclick="window.closeModalById('authModal')" class="absolute top-4 right-4 text-stone-500 hover:text-black">
+      <button id="auth-close" class="absolute top-4 right-4 text-stone-500 hover:text-black">
         <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
       <div class="flex justify-center gap-6 mb-6 font-serif border-b border-stone-200 pb-2">
-        <button onclick="window.switchAuthTab('login')" id="tab-login" class="text-xl font-bold text-[#a83f39] border-b-2 border-[#a83f39] pb-1 transition-colors">Login</button>
-        <button onclick="window.switchAuthTab('register')" id="tab-register" class="text-xl text-stone-400 hover:text-stone-600 pb-1 transition-colors">Register</button>
+        <button id="tab-login" class="text-xl font-bold text-[#a83f39] border-b-2 border-[#a83f39] pb-1 transition-colors">Login</button>
+        <button id="tab-register" class="text-xl text-stone-400 hover:text-stone-600 pb-1 transition-colors">Register</button>
       </div>
 
-      <!-- Login -->
+      <!-- LOGIN -->
       <div id="form-login" class="space-y-4">
-        <input type="email" id="login-email" class="w-full border border-stone-300 p-2 rounded font-serif text-sm" placeholder="Email">
-        <input type="password" id="login-password" class="w-full border border-stone-300 p-2 rounded font-serif text-sm" placeholder="Password">
-        <button onclick="window.authLogin()" class="w-full bg-[#a83f39] text-white py-2 rounded font-serif hover:bg-red-800">Sign In</button>
-        <p class="text-[12px] text-stone-500 font-serif-text leading-relaxed" data-i18n="auth.tip">
-          Tip: Please register first if you don’t have an account.
-        </p>
+        <input type="email" id="login-email" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Email">
+        <input type="password" id="login-password" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Password">
+        <button id="login-submit" class="w-full bg-[#a83f39] text-white py-2 rounded font-serif hover:bg-red-800">Sign In</button>
+        <p class="text-xs text-stone-400 font-serif-text">Tip: If you don’t have an account, please register first.</p>
       </div>
 
-      <!-- Register -->
+      <!-- REGISTER -->
       <div id="form-register" class="space-y-4 hidden">
-        <input type="text" id="reg-nickname" class="w-full border border-stone-300 p-2 rounded font-serif text-sm" placeholder="Nickname (for comments)">
-        <input type="email" id="reg-email" class="w-full border border-stone-300 p-2 rounded font-serif text-sm" placeholder="Email">
-        <input type="password" id="reg-password" class="w-full border border-stone-300 p-2 rounded font-serif text-sm" placeholder="Password (6+ chars)">
-        <button onclick="window.authRegister()" class="w-full bg-[#a83f39] text-white py-2 rounded font-serif hover:bg-red-800">Create Account</button>
-        <p class="text-[12px] text-stone-500 font-serif-text leading-relaxed" data-i18n="auth.nicknote">
-          We will store your email + nickname so the admin can manage users.
-        </p>
+        <input type="email" id="reg-email" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Email">
+        <input type="password" id="reg-password" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Password (min 6 chars)">
+        <input type="text" id="reg-nick" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Nickname (display name)">
+        <button id="reg-submit" class="w-full bg-stone-800 text-white py-2 rounded font-serif hover:bg-stone-700">Create Account</button>
       </div>
     </div>
   </div>
 
-  <!-- ADMIN MODAL -->
-  <div id="adminModal" class="fixed inset-0 z-[80] hidden bg-black/80 flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-lg max-w-md w-full shadow-2xl relative">
-      <button onclick="window.closeModalById('adminModal')" class="absolute top-4 right-4 text-stone-500 hover:text-black">
+  <!-- ADMIN PANEL MODAL -->
+  <div id="adminModal" class="fixed inset-0 z-[90] hidden bg-black/80 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-lg max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto relative">
+      <button id="admin-close" class="absolute top-4 right-4 text-stone-500 hover:text-black">
         <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
-      <h3 class="text-2xl font-bold text-stone-800 mb-2 text-center font-serif">Admin Access</h3>
-      <p class="text-center text-sm text-stone-500 mb-6 font-serif-text" data-i18n="admin.desc">
-        Enter the admin key to unlock upload / delete / edit controls.
-      </p>
+      <h3 class="text-2xl font-bold text-stone-800 mb-4 font-serif">Admin Panel</h3>
 
-      <div class="space-y-3">
-        <input type="password" id="admin-key" class="w-full border border-stone-300 p-2 rounded font-serif" placeholder="Key (qinghua666)">
-        <button onclick="window.adminLogin()" class="w-full bg-stone-800 text-white py-2 rounded font-serif hover:bg-stone-900">
-          Verify
-        </button>
-      </div>
-
-      <div class="mt-6 hidden" id="admin-panel">
-        <div class="border-t border-stone-200 pt-4 mt-4 space-y-3">
-          <button onclick="window.openUserList()" class="w-full border border-stone-300 py-2 rounded font-serif hover:border-[#a83f39]">
-            View Registered Users
-          </button>
-          <div id="user-list" class="hidden bg-stone-50 border border-stone-200 rounded p-3 max-h-40 overflow-y-auto text-xs font-sans"></div>
-          <p class="text-[12px] text-stone-500 font-serif-text leading-relaxed">
-            (User list / upload / delete will be fully wired after Part 2 & Part 3.)
-          </p>
+      <!-- ADMIN PASSWORD (qinghua666) -->
+      <div id="admin-password-box" class="border border-stone-200 rounded p-4 mb-6">
+        <p class="text-sm text-stone-600 font-serif-text mb-2">Enter admin key to enable admin actions (upload/delete/video/avatar).</p>
+        <div class="flex gap-2">
+          <input id="admin-key" type="password" class="flex-1 border border-stone-300 p-2 rounded font-serif" placeholder="Admin key (qinghua666)">
+          <button id="admin-verify" class="bg-[#a83f39] text-white px-4 rounded font-serif">Verify</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADD ARTWORK MODAL -->
-  <div id="addModal" class="fixed inset-0 z-[90] hidden bg-black/80 flex items-center justify-center p-4">
-    <div class="bg-white p-6 rounded-lg max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-xl font-bold text-stone-800 font-serif" data-i18n="admin.addTitle">Add New Artwork</h3>
-        <button onclick="window.closeModalById('addModal')" class="text-stone-500 hover:text-black">
-          <i data-lucide="x"></i>
-        </button>
+        <p id="admin-status" class="mt-2 text-xs text-stone-500"></p>
       </div>
 
-      <div class="space-y-3 font-serif">
-        <input type="text" id="new-title-zh" placeholder="Chinese Title" class="w-full border p-2 rounded">
-        <input type="text" id="new-title-en" placeholder="English Title" class="w-full border p-2 rounded">
-        <input type="text" id="new-desc-zh" placeholder="Desc (CN): Size | Material" class="w-full border p-2 rounded">
-        <input type="text" id="new-desc-en" placeholder="Desc (EN): Size | Material" class="w-full border p-2 rounded">
+      <!-- ADD ARTWORK -->
+      <div class="border border-stone-200 rounded p-4 mb-6">
+        <h4 class="text-lg font-bold font-serif text-stone-800 mb-3">Add New Artwork</h4>
 
-        <select id="new-category" class="w-full border p-2 rounded">
-          <option value="flower">Flowers</option>
-          <option value="animal">Animals</option>
-          <option value="bird_flower">Birds & Flowers</option>
-        </select>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input type="text" id="new-title-zh" placeholder="Chinese Title" class="w-full border p-2 rounded font-serif">
+          <input type="text" id="new-title-en" placeholder="English Title" class="w-full border p-2 rounded font-serif">
+          <input type="text" id="new-desc-zh" placeholder="Desc (CN): Size | Material" class="w-full border p-2 rounded font-serif">
+          <input type="text" id="new-desc-en" placeholder="Desc (EN): Size | Material" class="w-full border p-2 rounded font-serif">
+        </div>
 
-        <div id="drop-area" class="drop-zone w-full h-32 flex flex-col items-center justify-center rounded cursor-pointer text-stone-400 text-xs p-2 relative bg-stone-50">
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+          <select id="new-category" class="w-full border p-2 rounded font-serif">
+            <option value="flower">Flowers</option>
+            <option value="animal">Animals</option>
+            <option value="bird_flower">Birds & Flowers</option>
+          </select>
+
+          <select id="new-status" class="w-full border p-2 rounded font-serif">
+            <option value="Available">Available</option>
+            <option value="Sold">Sold</option>
+            <option value="Reserved">Reserved</option>
+          </select>
+        </div>
+
+        <div id="drop-area" class="drop-zone w-full h-36 mt-3 flex flex-col items-center justify-center rounded cursor-pointer text-stone-500 text-xs p-2 relative bg-stone-50 border-2 border-dashed border-stone-300">
           <i data-lucide="images" class="w-8 h-8 mb-2 text-stone-300"></i>
-          <p data-i18n="admin.dragHint">Drag & Drop Images Here (Storage)</p>
+          <p>Drag & Drop Images Here (Storage)</p>
           <input type="file" id="fileElem" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple>
         </div>
 
-        <div id="upload-previews" class="flex gap-2 overflow-x-auto h-20 border border-stone-200 p-1 rounded"></div>
+        <div id="upload-previews" class="mt-3 flex gap-2 overflow-x-auto h-20 border border-stone-200 p-1 rounded"></div>
 
-        <button onclick="window.publishArtwork()" class="w-full bg-[#a83f39] text-white py-2 rounded mt-2 hover:bg-red-800" data-i18n="admin.publish">
+        <button id="publish-artwork" class="w-full bg-[#a83f39] text-white py-3 rounded mt-3 font-serif hover:bg-red-800">
           Publish
         </button>
+
+        <p class="text-xs text-stone-500 mt-2 font-serif-text">
+          Note: Only admin can upload to Storage and publish artwork.
+        </p>
+      </div>
+
+      <!-- USERS -->
+      <div class="border border-stone-200 rounded p-4">
+        <div class="flex items-center justify-between">
+          <h4 class="text-lg font-bold font-serif text-stone-800">Users</h4>
+          <button id="load-users" class="text-xs border border-stone-300 px-3 py-1 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif">
+            Refresh list
+          </button>
+        </div>
+        <div id="user-list-content" class="mt-3 bg-stone-50 border border-stone-200 rounded p-3 text-xs space-y-2 max-h-56 overflow-y-auto">
+          <p class="text-stone-400">No data yet.</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- DETAILS MODAL (Artwork + comments/likes wired in Part 2) -->
+  <!-- DETAILS MODAL -->
   <div id="imgModal" class="fixed inset-0 z-[60] hidden bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
-    <button onclick="window.closeArtworkModal()" class="fixed top-6 right-6 text-white hover:text-[#a83f39] transition-colors z-[70]">
+    <button id="modal-close" class="fixed top-6 right-6 text-white hover:text-[#a83f39] transition-colors z-[70]">
       <i data-lucide="x" class="w-10 h-10"></i>
     </button>
 
@@ -490,680 +470,1084 @@
             <option value="Reserved">Reserved</option>
           </select>
           <div class="flex gap-2">
-            <button onclick="window.updateArtworkStatus()" class="flex-1 bg-green-800 hover:bg-green-700 text-white py-1 px-2 rounded text-sm font-serif">Update Status</button>
-            <button onclick="window.deleteArtwork()" class="flex-1 bg-red-800 hover:bg-red-700 text-white py-1 px-2 rounded text-sm font-serif">Delete</button>
+            <button id="status-update-btn" class="flex-1 bg-green-800 hover:bg-green-700 text-white py-1 px-2 rounded text-sm font-serif">Update Status</button>
+            <button id="delete-btn" class="flex-1 bg-red-800 hover:bg-red-700 text-white py-1 px-2 rounded text-sm font-serif">Delete</button>
           </div>
         </div>
 
         <h3 id="modalTitle" class="text-4xl mb-2 text-[#a83f39] font-serif italic tracking-wide"></h3>
         <p id="modalDesc" class="text-stone-300 text-lg font-serif italic mb-4"></p>
-        <div id="modalStatus" class="inline-block px-3 py-1 bg-stone-800 text-sm tracking-widest font-serif mb-4"></div>
 
-        <div class="mt-4 flex items-center gap-3">
-          <button onclick="window.toggleLike()" class="flex items-center gap-2 bg-stone-800 hover:bg-stone-700 px-3 py-2 rounded text-sm font-serif">
-            <i data-lucide="heart" class="w-4 h-4"></i> <span data-i18n="like">Like</span>
+        <div class="flex items-center justify-between gap-3">
+          <div id="modalStatus" class="inline-block px-3 py-1 bg-stone-800 text-sm tracking-widest font-serif mb-4"></div>
+
+          <button id="like-btn" class="mb-4 inline-flex items-center gap-2 border border-stone-600 px-3 py-2 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors">
+            <i data-lucide="heart" class="w-4 h-4"></i>
+            <span id="like-count" class="text-sm">0</span>
           </button>
-          <span id="likeCount" class="text-sm text-stone-300 font-sans">0</span>
         </div>
 
-        <div class="mt-8 border-t border-stone-700 pt-6">
-          <h4 class="text-lg font-bold mb-4 font-serif" data-i18n="comments.title">Comments</h4>
-          <div id="comments-list" class="space-y-4 max-h-[260px] overflow-y-auto mb-4 pr-2"></div>
+        <div class="mt-6 border-t border-stone-700 pt-6">
+          <h4 class="text-lg font-bold mb-4 font-serif">Comments</h4>
+          <div id="comments-list" class="space-y-4 max-h-[300px] overflow-y-auto mb-4 pr-2"></div>
 
-          <div id="comment-form-container" class="flex gap-2">
+          <div class="flex gap-2">
             <input id="new-comment-input" type="text" placeholder="Share your thoughts..." class="flex-1 bg-stone-800 border border-stone-600 rounded px-3 py-2 text-sm text-white">
-            <button onclick="window.postComment()" class="bg-[#a83f39] text-white px-4 py-2 rounded text-sm font-serif hover:bg-red-800" data-i18n="comments.post">Post</button>
+            <button id="post-comment-btn" class="bg-[#a83f39] text-white px-4 py-2 rounded text-sm font-serif">Post</button>
           </div>
-
-          <p id="comment-login-tip" class="hidden text-[12px] text-stone-400 mt-3 font-serif-text" data-i18n="comments.loginTip">
-            Please sign in to comment.
-          </p>
+          <p id="comment-hint" class="text-xs text-stone-400 mt-2">You must sign in to comment.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ========= PART 1 SCRIPT: UI + I18N ONLY (Firebase wired in Part 2/3) ========= -->
-  <script>
-    // Mobile menu
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('mobile-menu-btn');
-      const menu = document.getElementById('mobile-menu');
-      if(btn && menu){
-        btn.addEventListener('click', () => menu.classList.toggle('hidden'));
-      }
-      lucide.createIcons();
-    });
-
-    // i18n
-    let currentLang = localStorage.getItem('huaqing_lang') || 'en';
-
-    const i18n = {
-      zh: {
-        "seal":"花青",
-        "nav.home":"首页",
-        "nav.source":"工笔之源",
-        "nav.artist":"关于画家",
-        "nav.gallery":"作品赏析",
-        "nav.contact":"收藏/联系",
-
-        "hero.subtitle":"工笔画艺术",
-        "hero.title":"尽精微 · 致广大",
-        "hero.desc":"“于静谧中见乾坤，于细微处见广大。”",
-        "hero.button":"进入画廊",
-        "hero.seal":"花青",
-
-        "gongbi.label":"关于工笔",
-        "gongbi.title":"起源 · 兴盛 · 鼎盛",
-        "gongbi.p1":"工笔画起源于战国至两汉时期（公元前475年—公元220年），早期见于帛画与壁画之中，强调以线造型、设色谨严，为后世“以线立骨”的体系奠基。",
-        "gongbi.p2":"魏晋南北朝（220–589年）时期，人物画与佛教绘画的发展进一步推动工笔技法的成熟；唐代（618–907年）工笔人物与花鸟画趋于规范化，线描与设色的传统逐步确立。",
-        "gongbi.p3":"宋代（960–1279年）是工笔画的巅峰。宋徽宗赵佶设立翰林图画院，提倡“格物致知”，追求极致写实与诗性统一。宋代工笔花鸟以严谨结构、精微设色与静谧气质，成为中国绘画史上最重要的美学典范之一。",
-        "gongbi.list1":"<strong>骨法用笔：</strong> 以铁线描、游丝描等线法建立形与神",
-        "gongbi.list2":"<strong>层层设色：</strong> 分染、罩染、统染反复叠加，色泽温润持久",
-
-        "artist.name":"花青",
-        "artist.title":"当代工笔画家",
-        "artist.bio1":"花青，工笔花鸟创作者。她长期研习宋元工笔的线性结构与设色体系，并在当代语境中重建“静”的审美：不追求喧哗的视觉刺激，而是在克制的构图与细密的笔触中，让观看回到呼吸与停顿。",
-        "artist.bio2":"她常以竹、荷、禽鸟等意象为线索，关注自然在季节与光影中的微小变化。作品强调“清、雅、缓、净”的气质：既保留传统工笔的秩序与工整，也让画面留出余白，使观者在安静里与自己相遇。",
-        "artist.stat1":"年艺术生涯",
-        "artist.stat2":"次展览经历",
-        "artist.stat3":"私人收藏",
-
-        "gallery.label":"精选作品",
-        "gallery.title":"墨韵流芳",
-        "gallery.filter.all":"全部",
-        "gallery.filter.flower":"花",
-        "gallery.filter.animal":"动物",
-        "gallery.filter.bird_flower":"花鸟",
-
-        "contact.title":"收藏与联络",
-        "contact.desc":"若您对作品感兴趣，或有定制/合作需求，欢迎联系。期待与您分享工笔画的静谧之美。",
-
-        "form.name":"姓名",
-        "form.email":"邮箱",
-        "form.message":"留言",
-        "form.submit":"发送留言",
-
-        "footer.tagline":"于静谧中见乾坤",
-
-        "auth.tip":"提示：若没有账号，请先注册。",
-        "auth.nicknote":"我们会保存你的邮箱 + 昵称，便于后台管理与评论显示。",
-
-        "admin.desc":"输入管理员口令以解锁上传/删除/编辑功能。",
-        "admin.addWork":"添加新作品",
-        "admin.addTitle":"添加新作品",
-        "admin.dragHint":"拖拽上传图片（Storage）",
-        "admin.publish":"发布作品",
-
-        "like":"点赞",
-        "comments.title":"评论",
-        "comments.post":"发布",
-        "comments.loginTip":"请先登录后再评论。"
-      },
-      en: {
-        "seal":"Hua",
-        "nav.home":"Home",
-        "nav.source":"The Craft",
-        "nav.artist":"Artist",
-        "nav.gallery":"Gallery",
-        "nav.contact":"Collect",
-
-        "hero.subtitle":"The Art of Gongbi",
-        "hero.title":"Timeless Serenity, Painted in Silk",
-        "hero.desc":"“Where the microscopic world meets infinite mindfulness.”",
-        "hero.button":"Explore Collection",
-        "hero.seal":"Hua Qing",
-
-        "gongbi.label":"The Craft",
-        "gongbi.title":"Origins · Flourish · Pinnacle",
-        "gongbi.p1":"Gongbi painting originated during the Warring States and Han Dynasties (c. 475 BCE – 220 CE). Early examples appeared in silk paintings and murals, where disciplined linework and controlled coloration laid the foundation for later Gongbi traditions.",
-        "gongbi.p2":"In the Wei–Jin and Northern–Southern Dynasties (220–589 CE), the development of figure painting and Buddhist art further refined Gongbi techniques. By the Tang Dynasty (618–907 CE), Gongbi became increasingly systematized, with formal conventions of line and color firmly established.",
-        "gongbi.p3":"The art reached its pinnacle in the Song Dynasty (960–1279 CE). Emperor Huizong founded the Imperial Painting Academy and advocated *gewu zhizhi*—the pursuit of truth through careful observation. Song Gongbi flower-and-bird paintings are celebrated for their precision, restraint, and poetic stillness, forming a major aesthetic legacy in Chinese art history.",
-        "gongbi.list1":"<strong>Structure by line:</strong> hair-thin strokes define form and spirit",
-        "gongbi.list2":"<strong>Color by layers:</strong> repeated washes create depth and lasting radiance",
-
-        "artist.name":"Hua Qing",
-        "artist.title":"Contemporary Gongbi Artist",
-        "artist.bio1":"Hua Qing is a contemporary Gongbi artist whose practice is rooted in refined Song–Yuan traditions. Rather than pursuing spectacle, she rebuilds an aesthetic of stillness—where disciplined composition and delicate brushwork invite the viewer to slow down.",
-        "artist.bio2":"Working with motifs such as bamboo, lotus, and birds, she pays attention to subtle shifts of season, light, and air. Her paintings carry a quiet clarity—structured yet spacious—preserving classical order while leaving room for breath, silence, and contemplation.",
-        "artist.stat1":"Years Devotion",
-        "artist.stat2":"Global Exhibitions",
-        "artist.stat3":"Private Collections",
-
-        "gallery.label":"Curated Collection",
-        "gallery.title":"Ink & Rhythm",
-        "gallery.filter.all":"All Works",
-        "gallery.filter.flower":"Flowers",
-        "gallery.filter.animal":"Animals",
-        "gallery.filter.bird_flower":"Birds & Flowers",
-
-        "contact.title":"Acquire & Connect",
-        "contact.desc":"For acquisition inquiries, commissions, or gallery representation, please reach out. I’d love to share the quiet beauty of Gongbi with you.",
-
-        "form.name":"Your Name",
-        "form.email":"Email Address",
-        "form.message":"Inquiry / Message",
-        "form.submit":"Send Inquiry",
-
-        "footer.tagline":"Designed for the beauty of tranquility.",
-
-        "auth.tip":"Tip: Please register first if you don’t have an account.",
-        "auth.nicknote":"We store your email + nickname so the admin can manage users and show names in comments.",
-
-        "admin.desc":"Enter the admin key to unlock upload / delete / edit controls.",
-        "admin.addWork":"Add New Artwork",
-        "admin.addTitle":"Add New Artwork",
-        "admin.dragHint":"Drag & Drop Images Here (Storage)",
-        "admin.publish":"Publish",
-
-        "like":"Like",
-        "comments.title":"Comments",
-        "comments.post":"Post",
-        "comments.loginTip":"Please sign in to comment."
-      }
-    };
-
-    window.applyLanguage = () => {
-      const btn = document.getElementById('lang-btn-text');
-      const btnMobile = document.getElementById('lang-btn-text-mobile');
-      if (btn) btn.innerText = currentLang === 'zh' ? 'EN' : '中';
-      if (btnMobile) btnMobile.innerText = currentLang === 'zh' ? 'EN' : '中';
-
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (i18n[currentLang] && i18n[currentLang][key] != null) {
-          el.innerHTML = i18n[currentLang][key];
-        }
-      });
-      // Auth UI label (wired in Part 2)
-      if (window.updateAuthUI) window.updateAuthUI();
-    };
-
-    window.toggleLanguage = () => {
-      currentLang = currentLang === 'zh' ? 'en' : 'zh';
-      localStorage.setItem('huaqing_lang', currentLang);
-      window.applyLanguage();
-    };
-
-    // modal helpers
-    window.closeModalById = (id) => document.getElementById(id)?.classList.add('hidden');
-    window.openAuthModal = (tab) => {
-      document.getElementById('authModal')?.classList.remove('hidden');
-      window.switchAuthTab(tab);
-    };
-    window.switchAuthTab = (tab) => {
-      const loginForm = document.getElementById('form-login');
-      const regForm = document.getElementById('form-register');
-      const tabLogin = document.getElementById('tab-login');
-      const tabReg = document.getElementById('tab-register');
-      if (!loginForm || !regForm || !tabLogin || !tabReg) return;
-
-      if (tab === 'login') {
-        loginForm.classList.remove('hidden'); regForm.classList.add('hidden');
-        tabLogin.classList.add('text-[#a83f39]','border-b-2'); tabLogin.classList.remove('text-stone-400');
-        tabReg.classList.remove('text-[#a83f39]','border-b-2'); tabReg.classList.add('text-stone-400');
-      } else {
-        loginForm.classList.add('hidden'); regForm.classList.remove('hidden');
-        tabReg.classList.add('text-[#a83f39]','border-b-2'); tabReg.classList.remove('text-stone-400');
-        tabLogin.classList.remove('text-[#a83f39]','border-b-2'); tabLogin.classList.add('text-stone-400');
-      }
-    };
-
-    // admin modal
-    window.openAdminModal = () => document.getElementById('adminModal')?.classList.remove('hidden');
-
-    // gallery placeholders until Firebase in Part 2/3
-    window.filterGallery = (cat) => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('text-[#a83f39]','border-b','border-[#a83f39]'));
-      const el = document.querySelector(`.filter-btn[data-filter="${cat}"]`);
-      if (el) el.classList.add('text-[#a83f39]','border-b','border-[#a83f39]');
-      // real render in Part 2
-    };
-
-    window.openAddModal = () => document.getElementById('addModal')?.classList.remove('hidden');
-    window.closeArtworkModal = () => document.getElementById('imgModal')?.classList.add('hidden');
-
-    // First paint i18n
-    window.applyLanguage();
-  </script>
-
- <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut
-  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-  import {
-    getFirestore,
-    doc, setDoc, getDoc,
-    collection, addDoc, getDocs,
-    updateDoc, deleteDoc,
-    onSnapshot, query, orderBy, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-  import {
-    getStorage,
-    ref as sRef,
-    uploadBytes,
-    getDownloadURL
-  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-
-  // ✅ 用你自己的 firebaseConfig（你发的那份）
-  const firebaseConfig = {
-    apiKey: "AIzaSyBDvZ7oykdugl6DQH_p-0KOgy0sfMuMmFc",
-    authDomain: "qinghua-852c1.firebaseapp.com",
-    projectId: "qinghua-852c1",
-    // ⚠️ 建议改成 appspot.com（Firebase Web 最常用的 bucket 形式）
-    storageBucket: "qinghua-852c1.appspot.com",
-    messagingSenderId: "391709518256",
-    appId: "1:391709518256:web:a18730b2d099c362e9ce75",
-    measurementId: "G-8T36VSX6B6"
-  };
-
-  // ✅ 填你的管理员 UID（来自 Firebase Console → Authentication → Users）
-  const ADMIN_UID = "把你的管理员UID粘贴在这里";
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-
-  // 你的 Firestore collections（可按你原来命名）
-  const COL_ARTWORKS = "artworks";
-  const COL_USERS = "users";
-  const COL_COMMENTS = "comments";
-  const DOC_ARTIST = "site/artist";   // 作者信息存一个 doc
-  const DOC_CONFIG = "site/config";   // 视频 URL 等配置
-
-  let currentUser = null;
-  let isAdmin = false;
-  let currentArtworkId = null;
-
-  // ======== UI 绑定（你可以沿用你原来的 modal 结构，只要 id 对得上） ========
-
-  window.openAuthModal = (tab="login") => {
-    document.getElementById("authModal").classList.remove("hidden");
-    window.switchAuthTab(tab);
-  };
-
-  window.switchAuthTab = (tab) => {
-    document.getElementById("form-login").classList.toggle("hidden", tab !== "login");
-    document.getElementById("form-register").classList.toggle("hidden", tab !== "register");
-  };
-
-  // ✅ 登录（Email + Password）
-  window.handleUserLogin = async () => {
-    const email = document.getElementById("login-email").value.trim();
-    const pass = document.getElementById("login-pass").value.trim();
-    if (!email || !pass) return alert("Please enter email and password.");
-
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      document.getElementById("authModal").classList.add("hidden");
-    } catch (e) {
-      alert("Login failed: " + e.message);
-    }
-  };
-
-  // ✅ 注册（Email + Password + Nickname）
-  window.handleUserRegister = async () => {
-    const email = document.getElementById("reg-email").value.trim();
-    const pass = document.getElementById("reg-pass").value.trim();
-    const nick = document.getElementById("reg-nick").value.trim();
-    if (!email || !pass || !nick) return alert("Please enter email, password, and nickname.");
-
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      // 存用户资料，后台可看邮箱+昵称
-      await setDoc(doc(db, COL_USERS, cred.user.uid), {
-        email, nickname: nick, createdAt: serverTimestamp()
-      });
-      document.getElementById("authModal").classList.add("hidden");
-    } catch (e) {
-      alert("Register failed: " + e.message);
-    }
-  };
-
-  window.logout = async () => {
-    await signOut(auth);
-  };
-
-  function setAdminUI(flag) {
-    // 你页面里这些元素：只有管理员才显示
-    document.getElementById("add-artwork-fab")?.classList.toggle("hidden", !flag);
-    document.getElementById("artist-upload-hint")?.classList.toggle("hidden", !flag);
-    document.getElementById("video-edit-btn")?.classList.toggle("hidden", !flag);
-    // modal 里的 admin panel
-    document.getElementById("img-admin-edit-panel")?.classList.toggle("hidden", !flag);
-  }
-
-  function updateAuthUI() {
-    const el = document.getElementById("user-name-display");
-    if (!el) return;
-    if (!currentUser) {
-      el.innerText = "Sign In";
-      return;
-    }
-    // 显示 nickname（没有就显示邮箱）
-    el.innerText = currentUser.nickname || currentUser.email || "User";
-  }
-
-  // ✅ 关键：监听登录状态（不再匿名登录，所以不会“莫名其妙 Signed in”）
-  onAuthStateChanged(auth, async (u) => {
-    if (!u) {
-      currentUser = null;
-      isAdmin = false;
-      setAdminUI(false);
-      updateAuthUI();
-      return;
-    }
-
-    isAdmin = (u.uid === ADMIN_UID);
-
-    // 读取用户 profile（昵称）
-    let profile = null;
-    try {
-      const snap = await getDoc(doc(db, COL_USERS, u.uid));
-      profile = snap.exists() ? snap.data() : null;
-    } catch {}
-
-    currentUser = {
-      uid: u.uid,
-      email: u.email,
-      nickname: profile?.nickname
-    };
-
-    setAdminUI(isAdmin);
-    updateAuthUI();
-  });
-
-  // ======== 下面：把 Storage 上传封装成函数，供 Part2 调用 ========
-  async function uploadImageToStorage(file, folder) {
-    if (!auth.currentUser) throw new Error("Please sign in first.");
-    if (!isAdmin) throw new Error("Admin only.");
-
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${folder}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
-    const storageRef = sRef(storage, path);
-
-    const bytes = await file.arrayBuffer();
-    await uploadBytes(storageRef, new Uint8Array(bytes), { contentType: file.type || "image/jpeg" });
-    return await getDownloadURL(storageRef);
-  }
-
-  // 暴露给 Part2
-  window.__APP__ = {
-    auth, db, storage,
-    isAdmin: () => isAdmin,
-    currentUser: () => currentUser,
-    uploadImageToStorage,
-    COL_ARTWORKS, COL_USERS, COL_COMMENTS, DOC_ARTIST, DOC_CONFIG
-  };
-   // ================= Part 2: Admin features + Gallery =================
-const { db, uploadImageToStorage, isAdmin, currentUser,
-        COL_ARTWORKS, COL_COMMENTS, DOC_ARTIST, DOC_CONFIG } = window.__APP__;
+  <!-- SCRIPT START -->
+  <script type="module">
+    // ===============================
+// Firebase (Modular SDK) imports
+// ===============================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
-  doc, setDoc, getDoc,
-  collection, addDoc, getDocs,
-  updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  getFirestore,
+  doc, getDoc, setDoc, updateDoc,
+  collection, addDoc, deleteDoc,
+  query, orderBy, onSnapshot, getDocs,
+  serverTimestamp, increment
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ---------- YouTube Shorts -> Embed ----------
-function normalizeYouTubeEmbed(url) {
-  // 支持：youtube.com/shorts/xxxx、youtu.be/xxxx、youtube.com/watch?v=xxxx
-  try {
-    const u = new URL(url);
-    let id = "";
-    if (u.hostname.includes("youtu.be")) id = u.pathname.replace("/", "");
-    else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/shorts/")[1].split("?")[0];
-    else id = u.searchParams.get("v") || "";
-    if (!id) return null;
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}`;
-  } catch {
-    return null;
+import {
+  getStorage,
+  ref, uploadBytes, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
+// ===============================
+// Your Firebase config (qinghua-852c1)
+// ===============================
+const firebaseConfig = {
+  apiKey: "AIzaSyBDvZ7oykdugl6DQH_p-0KOgy0sfMuMmFc",
+  authDomain: "qinghua-852c1.firebaseapp.com",
+  projectId: "qinghua-852c1",
+  storageBucket: "qinghua-852c1.firebasestorage.app",
+  messagingSenderId: "391709518256",
+  appId: "1:391709518256:web:a18730b2d099c362e9ce75",
+  measurementId: "G-8T36VSX6B6"
+};
+
+// ===============================
+// Initialize Firebase services
+// ===============================
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// ===============================
+// IMPORTANT: GitHub Pages domain
+// ===============================
+// 你需要去 Firebase Console -> Authentication -> Settings -> Authorized domains
+// 添加：liusiyu4141-blip.github.io
+// （不用添加 /huaqing.github.io/ 这一段，域名只写到 .io 即可）
+
+// ===============================
+// Global state
+// ===============================
+let currentUser = null;
+let isAdmin = false;           // Admin = 登录后 + 输入 admin key 才会开启
+let currentLang = "en";
+let selectedArtworkId = null;
+let selectedArtworkDoc = null;
+
+// admin key (front-end only; not "secure", but fits your GitHub Pages scenario)
+const ADMIN_KEY = "qinghua666";
+
+// YouTube Shorts (replaceable by admin)
+const DEFAULT_SHORTS_ID = "zN0VzZRzlqM";
+
+// ===============================
+// DOM helpers
+// ===============================
+const $ = (id) => document.getElementById(id);
+const toast = (msg) => alert(msg);
+
+// ===============================
+// i18n content
+// ===============================
+const i18n = {
+  en: {
+    "seal": "Hua",
+    "nav.home": "Home",
+    "nav.source": "The Craft",
+    "nav.artist": "Artist",
+    "nav.gallery": "Gallery",
+    "nav.contact": "Collect",
+
+    "hero.subtitle": "The Ancient Art of Gongbi",
+    "hero.title": "Timeless Serenity, Painted in Silk",
+    "hero.desc": "\"Where the microscopic world meets infinite mindfulness.\"",
+    "hero.button": "Explore Collection",
+    "hero.seal": "Hua Qing",
+
+    "video.caption": "Process video (loop)",
+    "video.change": "Change Video",
+
+    "gongbi.label": "The Origin",
+    "gongbi.title": "Gongbi: Precision and Poise",
+    "gongbi.p1":
+      "Gongbi (工笔) is a meticulous Chinese painting tradition known for fine brushwork, controlled ink lines, and layered mineral pigments. Its roots can be traced back to early figure and court painting, and it matured into a highly refined style through imperial ateliers.",
+    "gongbi.p2":
+      "Historically, Gongbi flourished in the Tang dynasty (618–907) and reached new heights in the Song dynasty (960–1279), when artists pursued naturalistic detail, elegant composition, and subtle color transitions. In later periods, Gongbi continued to evolve through literati exchanges and regional schools.",
+    "gongbi.p3":
+      "Today, Gongbi remains a living craft—where patience becomes technique, and technique becomes tranquility.",
+    "gongbi.list1": "Precision line work with hair-thin control",
+    "gongbi.list2": "Layered pigments for luminous depth on silk or paper",
+    "gongbi.list3": "A meditative process—slow, deliberate, and enduring",
+
+    "artist.name": "Hua Qing",
+    "artist.title": "Gongbi Artist",
+    "artist.uploadTip": "Admin: Click to upload avatar",
+    "artist.bio1":
+      "Hua Qing is devoted to the classical Gongbi tradition, painting with delicate linework and calm composition. Each piece is built through disciplined layers—ink, color, and time—until life emerges in stillness.",
+    "artist.bio2":
+      "Her practice emphasizes the relationship between nature and mindfulness: birds, bamboo, blossoms, and quiet seasonal rhythms. The works invite viewers to slow down and notice detail—the place where attention becomes serenity.",
+    "artist.bio3":
+      "Through contemporary presentation and archival care, Hua Qing continues the Gongbi lineage with respect for history and a commitment to craft.",
+    "artist.stat1": "Years",
+    "artist.stat2": "Exhibitions",
+    "artist.stat3": "Collections",
+
+    "gallery.label": "Curated Collection",
+    "gallery.title": "Ink & Rhythm",
+    "gallery.filter.all": "All",
+    "gallery.filter.flower": "Flowers",
+    "gallery.filter.animal": "Animals",
+    "gallery.filter.bird_flower": "Birds & Flowers",
+
+    "contact.title": "Acquire & Connect",
+    "contact.desc":
+      "For acquisitions, commissions, or exhibitions, please reach out. Each artwork is handled with archival standards, and provenance notes can be provided upon request.",
+
+    "form.name": "Your Name",
+    "form.email": "Email Address",
+    "form.message": "Inquiry / Message",
+    "form.submit": "Send Inquiry",
+
+    "footer.tagline": "Designed for the beauty of tranquility."
+  },
+
+  zh: {
+    "seal": "华",
+    "nav.home": "首页",
+    "nav.source": "工笔来源",
+    "nav.artist": "作者",
+    "nav.gallery": "作品",
+    "nav.contact": "联系收藏",
+
+    "hero.subtitle": "工笔画的古典之美",
+    "hero.title": "以绢为纸，写静为永恒",
+    "hero.desc": "“在微观处见天地，在静心里得无穷。”",
+    "hero.button": "浏览作品",
+    "hero.seal": "华青",
+
+    "video.caption": "创作短视频（循环）",
+    "video.change": "更换视频",
+
+    "gongbi.label": "起源与兴盛",
+    "gongbi.title": "工笔：极致精微与从容气韵",
+    "gongbi.p1":
+      "工笔画（工笔）以严谨细密的线描、节制的设色与层层罩染著称。其传统可追溯至早期人物与宫廷绘画体系，并在长期的画院实践中逐步完善为高度成熟的绘画语言。",
+    "gongbi.p2":
+      "历史上，工笔画在唐代（618–907）逐渐兴盛，并在宋代（960–1279）达到新的高峰：写实观察、精致构图与微妙设色相互融合，形成兼具科学性与诗意的审美体系。此后历代延续发展，地域流派与文人趣味不断注入新的表达。",
+    "gongbi.p3":
+      "在当代，工笔仍是一门“慢工出细活”的活传统——用耐心成就技法，用技法抵达宁静。",
+    "gongbi.list1": "丝发般的用线控制与结构刻画",
+    "gongbi.list2": "多层设色与罩染，呈现温润通透的质感",
+    "gongbi.list3": "缓慢而专注的过程：以时间换取深度",
+
+    "artist.name": "华青",
+    "artist.title": "工笔画家",
+    "artist.uploadTip": "管理员：点击上传头像",
+    "artist.bio1":
+      "华青长期专注于传统工笔语言的当代表达，以细密线描与沉静构图营造“可观、可游、可居”的意境。每一幅作品都以严谨的步骤推进：起稿、勾线、分染、罩染与精修，层层叠加直至生机显现。",
+    "artist.bio2":
+      "她的创作主题多取自自然：竹影、花枝、飞鸟与四时之气。作品希望让观者放慢节奏，在细节中感受秩序与柔软——当注意力变得专注，宁静也随之出现。",
+    "artist.bio3":
+      "在尊重历史谱系的基础上，华青也重视作品的保存与呈现方式，以更适合当代观展的形式延续工笔的精微与雅正。",
+    "artist.stat1": "年",
+    "artist.stat2": "次展览",
+    "artist.stat3": "件收藏",
+
+    "gallery.label": "精选作品",
+    "gallery.title": "墨与节律",
+    "gallery.filter.all": "全部",
+    "gallery.filter.flower": "花卉",
+    "gallery.filter.animal": "走兽",
+    "gallery.filter.bird_flower": "花鸟",
+
+    "contact.title": "收藏与联系",
+    "contact.desc":
+      "如需收藏、定制或展览合作，请联系。作品可提供保存建议与来源说明（provenance notes）。",
+
+    "form.name": "姓名",
+    "form.email": "邮箱",
+    "form.message": "留言 / 需求",
+    "form.submit": "发送",
+
+    "footer.tagline": "为宁静之美而设计。"
   }
+};
+
+// ===============================
+// UI: language
+// ===============================
+function applyLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const k = el.getAttribute("data-i18n");
+    if (i18n[lang] && i18n[lang][k] !== undefined) el.textContent = i18n[lang][k];
+  });
+  $("lang-btn-text").textContent = lang === "en" ? "中" : "EN";
+  $("lang-btn-text-mobile").textContent = lang === "en" ? "中" : "EN";
 }
 
-function setAboutVideo(url) {
-  const wrap = document.getElementById("painting-process-video");
-  if (!wrap) return;
-  const embed = normalizeYouTubeEmbed(url);
+// ===============================
+// Video (YouTube Shorts embed)
+// ===============================
+// 注：YouTube iframe 很难做到“真正无缝循环”，我们用 playlist=ID + loop=1 达到循环效果
+async function loadAboutVideo() {
+  const cfgRef = doc(db, "siteConfig", "aboutVideo");
+  const snap = await getDoc(cfgRef);
 
-  // 自适应窗口（Shorts 9:16）
-  wrap.classList.add("relative", "w-full", "overflow-hidden", "rounded", "bg-black");
+  let shortsId = DEFAULT_SHORTS_ID;
+  if (snap.exists() && snap.data()?.shortsId) shortsId = snap.data().shortsId;
 
-  if (embed) {
-    // 9:16 比例
-    wrap.style.aspectRatio = "9 / 16";
-    wrap.innerHTML = `
-      <iframe
-        class="absolute inset-0 w-full h-full"
-        src="${embed}"
-        title="About Video"
-        frameborder="0"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowfullscreen>
-      </iframe>`;
+  // Shorts embed: use /embed/{id}
+  const src = `https://www.youtube.com/embed/${shortsId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${shortsId}&rel=0&modestbranding=1`;
+
+  $("about-video-container").innerHTML = `
+    <iframe
+      src="${src}"
+      title="YouTube video player"
+      frameborder="0"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen>
+    </iframe>
+  `;
+}
+
+// Admin change video
+async function setAboutVideoShortsId(shortsId) {
+  await setDoc(doc(db, "siteConfig", "aboutVideo"), { shortsId, updatedAt: serverTimestamp() }, { merge: true });
+  await loadAboutVideo();
+  toast("Video updated.");
+}
+
+// ===============================
+// Auth modal UI
+// ===============================
+function openAuthModal() { $("authModal").classList.remove("hidden"); }
+function closeAuthModal() { $("authModal").classList.add("hidden"); }
+
+function openAdminModal() { $("adminModal").classList.remove("hidden"); }
+function closeAdminModal() { $("adminModal").classList.add("hidden"); }
+
+function showLoginTab() {
+  $("tab-login").classList.add("text-[#a83f39]", "border-b-2", "border-[#a83f39]");
+  $("tab-register").classList.remove("text-[#a83f39]", "border-b-2", "border-[#a83f39]");
+  $("tab-register").classList.add("text-stone-400");
+  $("form-login").classList.remove("hidden");
+  $("form-register").classList.add("hidden");
+}
+function showRegisterTab() {
+  $("tab-register").classList.add("text-[#a83f39]", "border-b-2", "border-[#a83f39]");
+  $("tab-login").classList.remove("text-[#a83f39]", "border-b-2", "border-[#a83f39]");
+  $("tab-login").classList.add("text-stone-400");
+  $("form-register").classList.remove("hidden");
+  $("form-login").classList.add("hidden");
+}
+
+// ===============================
+// Admin mode (front-end)
+// ===============================
+function loadAdminFlagFromLocal() {
+  const saved = localStorage.getItem("HQ_ADMIN_OK");
+  isAdmin = saved === "1";
+}
+
+function setAdminFlag(ok) {
+  isAdmin = ok;
+  localStorage.setItem("HQ_ADMIN_OK", ok ? "1" : "0");
+  updateAdminUI();
+}
+
+function updateAdminUI() {
+  // Admin button show only when user is signed in
+  if (currentUser) $("admin-btn").classList.remove("hidden");
+  else $("admin-btn").classList.add("hidden");
+
+  // Admin-edit overlay items
+  if (isAdmin && currentUser) {
+    $("video-edit-btn").classList.remove("hidden");
+    $("artist-upload-overlay").classList.remove("hidden");
+    $("artist-upload-overlay").classList.add("flex");
   } else {
-    // 不是 YouTube 就当 mp4
-    wrap.style.aspectRatio = "16 / 9";
-    wrap.innerHTML = `
-      <video class="absolute inset-0 w-full h-full object-cover"
-        src="${url}" autoplay muted loop playsinline controls></video>`;
+    $("video-edit-btn").classList.add("hidden");
+    $("artist-upload-overlay").classList.add("hidden");
+    $("artist-upload-overlay").classList.remove("flex");
+  }
+
+  // modal admin panel
+  if (isAdmin && currentUser) $("img-admin-edit-panel").classList.remove("hidden");
+  else $("img-admin-edit-panel").classList.add("hidden");
+}
+
+// ===============================
+// Auth UI state
+// ===============================
+function updateAuthUI() {
+  const signedIn = !!currentUser;
+
+  // Reset: IMPORTANT to avoid your "Signed in!" confusion
+  // We only say signed in when we actually have user
+  if (!signedIn) {
+    $("user-name-display").textContent = "Sign In";
+    $("signin-btn").classList.remove("hidden");
+    $("signout-btn").classList.add("hidden");
+
+    // mobile
+    $("signin-btn-mobile").classList.remove("hidden");
+    $("signout-btn-mobile").classList.add("hidden");
+
+    // user-only features
+    $("comment-hint").textContent = "You must sign in to comment.";
+  } else {
+    const name = currentUser.displayName || currentUser.email || "User";
+    $("user-name-display").textContent = name;
+
+    $("signin-btn").classList.remove("hidden");
+    $("signout-btn").classList.remove("hidden");
+
+    // mobile
+    $("signin-btn-mobile").classList.add("hidden");
+    $("signout-btn-mobile").classList.remove("hidden");
+
+    $("comment-hint").textContent = "Write a comment and post.";
+  }
+
+  updateAdminUI();
+}
+
+// ===============================
+// Firestore: user profile tracking (email + nickname)
+// ===============================
+async function upsertUserProfile(user) {
+  const uref = doc(db, "users", user.uid);
+  const snap = await getDoc(uref);
+  const payload = {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "",
+    lastLoginAt: serverTimestamp()
+  };
+  if (!snap.exists()) {
+    payload.createdAt = serverTimestamp();
+    await setDoc(uref, payload);
+  } else {
+    await updateDoc(uref, payload);
   }
 }
 
-// ---------- Load config (video url) ----------
-async function loadConfig() {
-  const snap = await getDoc(doc(db, DOC_CONFIG));
-  if (snap.exists() && snap.data().aboutVideoUrl) {
-    setAboutVideo(snap.data().aboutVideoUrl);
+// ===============================
+// Gallery rendering
+// ===============================
+function catLabel(cat) {
+  if (currentLang === "zh") {
+    if (cat === "flower") return "花卉";
+    if (cat === "animal") return "走兽";
+    if (cat === "bird_flower") return "花鸟";
+    return "其他";
+  } else {
+    if (cat === "flower") return "Flowers";
+    if (cat === "animal") return "Animals";
+    if (cat === "bird_flower") return "Birds & Flowers";
+    return "Other";
   }
 }
-loadConfig();
 
-// ---------- Admin: change video ----------
-window.editAboutVideo = async () => {
-  if (!isAdmin()) return alert("Admin only");
-  const newUrl = prompt("Paste YouTube Shorts / YouTube / MP4 URL:", "https://www.youtube.com/shorts/zN0VzZRzlqM");
-  if (!newUrl) return;
-  await setDoc(doc(db, DOC_CONFIG), { aboutVideoUrl: newUrl, updatedAt: serverTimestamp() }, { merge: true });
-  setAboutVideo(newUrl);
-  alert("Video updated.");
-};
-
-// ---------- Admin: drag/drop artist avatar ----------
-const artistBox = document.getElementById("artist-img-container");
-if (artistBox) {
-  artistBox.addEventListener("dragover", (e) => e.preventDefault());
-  artistBox.addEventListener("drop", async (e) => {
-    e.preventDefault();
-    if (!isAdmin()) return alert("Admin only");
-    const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return alert("Please drop an image file.");
-
-    try {
-      const url = await uploadImageToStorage(file, "artist");
-      await setDoc(doc(db, DOC_ARTIST), { photoUrl: url, updatedAt: serverTimestamp() }, { merge: true });
-      document.getElementById("artist-img").src = url;
-      alert("Avatar updated.");
-    } catch (err) {
-      alert("Upload failed: " + err.message);
-    }
-  });
+function statusBadge(status) {
+  const base = "inline-block px-2 py-1 text-xs rounded border";
+  if (status === "Sold") return `${base} border-red-300 text-red-700 bg-red-50`;
+  if (status === "Reserved") return `${base} border-amber-300 text-amber-800 bg-amber-50`;
+  return `${base} border-emerald-300 text-emerald-700 bg-emerald-50`;
 }
 
-// ---------- Realtime: artist avatar ----------
-onSnapshot(doc(db, DOC_ARTIST), (snap) => {
-  if (snap.exists() && snap.data().photoUrl) {
-    const img = document.getElementById("artist-img");
-    if (img) img.src = snap.data().photoUrl;
-  }
-});
+function createArtworkCard(docSnap) {
+  const a = docSnap.data();
+  const title = currentLang === "zh" ? (a.titleZh || "") : (a.titleEn || "");
+  const desc = currentLang === "zh" ? (a.descZh || "") : (a.descEn || "");
+  const cover = (a.imageUrls && a.imageUrls[0]) ? a.imageUrls[0] : "";
 
-// ---------- Gallery realtime ----------
-let allArtworks = [];
-const artworksQ = query(collection(db, COL_ARTWORKS), orderBy("createdAt", "desc"));
-onSnapshot(artworksQ, (snap) => {
-  allArtworks = [];
-  snap.forEach(d => allArtworks.push({ id: d.id, ...d.data() }));
-  renderGallery("all");
-});
+  const wrap = document.createElement("div");
+  wrap.className = "break-inside-avoid group cursor-pointer";
+  wrap.dataset.category = a.category || "all";
 
-function renderGallery(filterCat="all") {
-  const grid = document.getElementById("gallery-grid");
-  if (!grid) return;
-  grid.innerHTML = "";
-
-  const list = filterCat === "all" ? allArtworks : allArtworks.filter(a => a.category === filterCat);
-  list.forEach(art => {
-    const mainImg = art.images?.[0];
-    const card = document.createElement("div");
-    card.className = "group cursor-pointer break-inside-avoid mb-8 relative";
-    card.innerHTML = `
-      <div class="bg-white shadow-md rounded overflow-hidden relative">
-        <img src="${mainImg}" class="w-full h-auto object-cover" />
+  wrap.innerHTML = `
+    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white">
+      <div class="absolute top-3 left-3 ${statusBadge(a.status || "Available")}">${a.status || "Available"}</div>
+      <img src="${cover}" alt="${title}" class="w-full h-auto object-cover transform group-hover:scale-105 transition duration-700 ease-out">
+      <div class="p-5">
+        <h3 class="text-2xl font-serif text-stone-800 italic mb-2">${escapeHtml(title)}</h3>
+        <p class="text-stone-500 font-serif-text text-sm">${escapeHtml(desc)}</p>
+        <div class="mt-3 flex items-center justify-between text-xs text-stone-400 uppercase tracking-widest">
+          <span>${catLabel(a.category)}</span>
+          <span class="text-[#a83f39]">${a.likesCount || 0} ❤</span>
+        </div>
       </div>
-      <div class="mt-4 text-center">
-        <h3 class="text-xl font-bold text-stone-800 font-serif">${art.title_zh || ""}</h3>
-        <p class="text-stone-500 text-sm mt-1 font-serif italic">${art.desc_zh || ""}</p>
-      </div>`;
-    card.addEventListener("click", () => openArtworkModal(art));
-    grid.appendChild(card);
+    </div>
+  `;
+
+  wrap.addEventListener("click", () => openArtworkModal(docSnap.id, a));
+  return wrap;
+}
+
+function renderGallery(docs) {
+  const grid = $("gallery-grid");
+  grid.innerHTML = "";
+  if (!docs.length) {
+    grid.innerHTML = `
+      <div class="break-inside-avoid bg-stone-50 border border-stone-200 rounded p-6 text-center text-stone-500 font-serif-text">
+        No artworks yet.
+      </div>
+    `;
+    return;
+  }
+  docs.forEach(d => grid.appendChild(createArtworkCard(d)));
+}
+
+function escapeHtml(s) {
+  return String(s || "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+// ===============================
+// Artwork modal
+// ===============================
+function openModal() { $("imgModal").classList.remove("hidden"); document.body.style.overflow = "hidden"; }
+function closeModal() {
+  $("imgModal").classList.add("hidden");
+  document.body.style.overflow = "";
+  selectedArtworkId = null;
+  selectedArtworkDoc = null;
+  $("modalImagesContainer").innerHTML = "";
+  $("comments-list").innerHTML = "";
+}
+
+function fillModalContent(art) {
+  const title = currentLang === "zh" ? (art.titleZh || "") : (art.titleEn || "");
+  const desc = currentLang === "zh" ? (art.descZh || "") : (art.descEn || "");
+  $("modalTitle").textContent = title;
+  $("modalDesc").textContent = desc;
+  $("modalStatus").textContent = `Status: ${art.status || "Available"}`;
+  $("like-count").textContent = String(art.likesCount || 0);
+
+  // images
+  $("modalImagesContainer").innerHTML = "";
+  const urls = art.imageUrls || [];
+  urls.forEach(u => {
+    const img = document.createElement("img");
+    img.src = u;
+    img.className = "w-full rounded shadow-lg";
+    $("modalImagesContainer").appendChild(img);
+  });
+
+  // admin selection
+  $("modal-status-select").value = art.status || "Available";
+}
+
+function openArtworkModal(id, art) {
+  selectedArtworkId = id;
+  selectedArtworkDoc = art;
+  fillModalContent(art);
+  openModal();
+  subscribeComments(id);
+}
+
+// ===============================
+// Firestore: artworks live
+// ===============================
+let unsubArtworks = null;
+
+function subscribeArtworks() {
+  if (unsubArtworks) unsubArtworks();
+  const qRef = query(collection(db, "artworks"), orderBy("createdAt", "desc"));
+
+  unsubArtworks = onSnapshot(qRef, (snap) => {
+    const docs = snap.docs;
+    renderGallery(docs);
+
+    // If modal open and current artwork updated -> refresh modal
+    if (selectedArtworkId) {
+      const found = docs.find(d => d.id === selectedArtworkId);
+      if (found) {
+        selectedArtworkDoc = found.data();
+        fillModalContent(selectedArtworkDoc);
+      }
+    }
+  }, (err) => {
+    console.error(err);
+    $("gallery-grid").innerHTML = `<div class="text-center text-red-600">Failed to load gallery.</div>`;
   });
 }
 
-window.filterGallery = (cat) => renderGallery(cat);
+// ===============================
+// Comments live
+// ===============================
+let unsubComments = null;
 
-// ---------- Add artwork (drag/drop + publish) ----------
-let uploadFiles = [];
+function subscribeComments(artworkId) {
+  if (unsubComments) unsubComments();
+  const qRef = query(collection(db, "artworks", artworkId, "comments"), orderBy("createdAt", "desc"));
+  unsubComments = onSnapshot(qRef, (snap) => {
+    const box = $("comments-list");
+    box.innerHTML = "";
+    if (snap.empty) {
+      box.innerHTML = `<p class="text-stone-400 text-sm">No comments yet.</p>`;
+      return;
+    }
+    snap.forEach(d => {
+      const c = d.data();
+      const row = document.createElement("div");
+      row.className = "border border-stone-700 rounded p-3";
+      const who = c.displayName || c.email || "Anonymous";
+      row.innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-sm text-white font-serif">${escapeHtml(who)}</span>
+          <span class="text-xs text-stone-400">${c.createdAt?.toDate ? c.createdAt.toDate().toLocaleString() : ""}</span>
+        </div>
+        <p class="text-stone-200 text-sm">${escapeHtml(c.text || "")}</p>
+      `;
+      box.appendChild(row);
+    });
+  });
+}
 
-window.openAddModal = () => {
-  if (!isAdmin()) return alert("Admin only");
-  document.getElementById("addModal").classList.remove("hidden");
-  uploadFiles = [];
-  const previews = document.getElementById("upload-previews");
-  if (previews) previews.innerHTML = "";
-};
+// ===============================
+// Likes
+// ===============================
+async function likeCurrentArtwork() {
+  if (!selectedArtworkId) return;
 
-const dropArea = document.getElementById("drop-area");
-if (dropArea) {
-  dropArea.addEventListener("dragover", (e) => { e.preventDefault(); dropArea.classList.add("dragover"); });
-  dropArea.addEventListener("dragleave", () => dropArea.classList.remove("dragover"));
+  if (!currentUser) {
+    toast("Please sign in to like.");
+    openAuthModal();
+    return;
+  }
+
+  const likeRef = doc(db, "artworks", selectedArtworkId, "likes", currentUser.uid);
+  const likeSnap = await getDoc(likeRef);
+
+  if (likeSnap.exists()) {
+    toast("You already liked this.");
+    return;
+  }
+
+  await setDoc(likeRef, { uid: currentUser.uid, createdAt: serverTimestamp() });
+  await updateDoc(doc(db, "artworks", selectedArtworkId), { likesCount: increment(1) });
+}
+
+// ===============================
+// Post comment
+// ===============================
+async function postComment() {
+  if (!selectedArtworkId) return;
+
+  if (!currentUser) {
+    toast("Please sign in to comment.");
+    openAuthModal();
+    return;
+  }
+
+  const text = $("new-comment-input").value.trim();
+  if (!text) return;
+
+  await addDoc(collection(db, "artworks", selectedArtworkId, "comments"), {
+    text,
+    uid: currentUser.uid,
+    email: currentUser.email || "",
+    displayName: currentUser.displayName || "",
+    createdAt: serverTimestamp()
+  });
+
+  $("new-comment-input").value = "";
+}
+
+// ===============================
+// Admin: upload avatar
+// ===============================
+async function loadArtistProfile() {
+  const pRef = doc(db, "siteConfig", "artistProfile");
+  const snap = await getDoc(pRef);
+  if (snap.exists() && snap.data()?.avatarUrl) {
+    $("artist-img").src = snap.data().avatarUrl;
+  }
+}
+
+async function uploadArtistAvatar(file) {
+  if (!currentUser || !isAdmin) {
+    toast("Admin only.");
+    return;
+  }
+  const key = `avatars/artist_${Date.now()}_${file.name}`;
+  const r = ref(storage, key);
+  await uploadBytes(r, file, { contentType: file.type });
+  const url = await getDownloadURL(r);
+
+  await setDoc(doc(db, "siteConfig", "artistProfile"), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
+  $("artist-img").src = url;
+  toast("Avatar updated.");
+}
+
+// ===============================
+// Admin: add artwork (Storage upload + Firestore doc)
+// ===============================
+let stagedFiles = [];
+
+function setupDropZone() {
+  const dropArea = $("drop-area");
+  const fileElem = $("fileElem");
+
+  function highlight() { dropArea.classList.add("dragover"); }
+  function unhighlight() { dropArea.classList.remove("dragover"); }
+
+  ["dragenter","dragover"].forEach(evt => dropArea.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); highlight(); }));
+  ["dragleave","drop"].forEach(evt => dropArea.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); unhighlight(); }));
+
   dropArea.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropArea.classList.remove("dragover");
-    if (!isAdmin()) return alert("Admin only");
-    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+    const files = [...(e.dataTransfer.files || [])].filter(f => f.type.startsWith("image/"));
     if (!files.length) return;
-    uploadFiles = files;
+    stagedFiles.push(...files);
+    renderStagedPreviews();
+  });
 
-    const previews = document.getElementById("upload-previews");
-    if (previews) {
-      previews.innerHTML = "";
-      files.forEach(f => {
-        const img = document.createElement("img");
-        img.className = "h-full w-auto rounded border";
-        img.src = URL.createObjectURL(f);
-        previews.appendChild(img);
-      });
-    }
+  fileElem.addEventListener("change", (e) => {
+    const files = [...(e.target.files || [])].filter(f => f.type.startsWith("image/"));
+    if (!files.length) return;
+    stagedFiles.push(...files);
+    renderStagedPreviews();
+    fileElem.value = "";
   });
 }
 
-window.addNewArtwork = async () => {
-  if (!isAdmin()) return alert("Admin only");
+function renderStagedPreviews() {
+  const box = $("upload-previews");
+  box.innerHTML = "";
+  stagedFiles.forEach((f, idx) => {
+    const url = URL.createObjectURL(f);
+    const div = document.createElement("div");
+    div.className = "relative w-16 h-16 flex-shrink-0";
+    div.innerHTML = `
+      <img src="${url}" class="w-16 h-16 object-cover rounded border border-stone-300"/>
+      <button data-idx="${idx}" class="absolute -top-2 -right-2 bg-red-700 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center">x</button>
+    `;
+    div.querySelector("button").addEventListener("click", (e) => {
+      const i = Number(e.currentTarget.dataset.idx);
+      stagedFiles.splice(i, 1);
+      renderStagedPreviews();
+    });
+    box.appendChild(div);
+  });
+}
 
-  const titleZh = document.getElementById("new-title-zh").value.trim();
-  const titleEn = document.getElementById("new-title-en").value.trim();
-  const descZh  = document.getElementById("new-desc-zh").value.trim();
-  const descEn  = document.getElementById("new-desc-en").value.trim();
-  const cat     = document.getElementById("new-category").value;
+async function uploadFilesToStorage(files) {
+  const urls = [];
+  for (const file of files) {
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const key = `artworks/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
+    const r = ref(storage, key);
+    await uploadBytes(r, file, { contentType: file.type });
+    const url = await getDownloadURL(r);
+    urls.push({ url, path: key });
+  }
+  return urls;
+}
 
-  if (!titleZh) return alert("Please enter Chinese title.");
-  if (!uploadFiles.length) return alert("Please drag & drop images first.");
+async function publishArtwork() {
+  // Admin only
+  if (!currentUser || !isAdmin) {
+    toast("Admin only. Please sign in and verify admin key.");
+    return;
+  }
 
+  const titleZh = $("new-title-zh").value.trim();
+  const titleEn = $("new-title-en").value.trim();
+  const descZh = $("new-desc-zh").value.trim();
+  const descEn = $("new-desc-en").value.trim();
+  const category = $("new-category").value;
+  const status = $("new-status").value;
+
+  if (!titleZh && !titleEn) {
+    toast("Please enter a title.");
+    return;
+  }
+  if (!stagedFiles.length) {
+    toast("Please upload at least one image.");
+    return;
+  }
+
+  // Upload images to Storage
   try {
-    // 上传到 Storage
-    const urls = [];
-    for (const f of uploadFiles) {
-      const url = await uploadImageToStorage(f, "artworks");
-      urls.push(url);
-    }
+    const uploaded = await uploadFilesToStorage(stagedFiles);
+    const imageUrls = uploaded.map(x => x.url);
+    const imagePaths = uploaded.map(x => x.path);
 
-    // 写 Firestore
-    await addDoc(collection(db, COL_ARTWORKS), {
-      title_zh: titleZh,
-      title_en: titleEn || titleZh,
-      desc_zh: descZh,
-      desc_en: descEn,
-      category: cat,
-      images: urls,
-      status: "Available",
+    // Create Firestore doc
+    await addDoc(collection(db, "artworks"), {
+      titleZh, titleEn, descZh, descEn,
+      category, status,
+      imageUrls,
+      imagePaths,        // used for deletion from Storage
+      likesCount: 0,
       createdAt: serverTimestamp(),
-      createdBy: currentUser()?.uid || null
+      createdBy: currentUser.uid
     });
 
-    document.getElementById("addModal").classList.add("hidden");
-    uploadFiles = [];
-    alert("Published!");
-  } catch (err) {
-    alert("Publish failed: " + err.message);
+    // reset
+    $("new-title-zh").value = "";
+    $("new-title-en").value = "";
+    $("new-desc-zh").value = "";
+    $("new-desc-en").value = "";
+    $("new-category").value = "flower";
+    $("new-status").value = "Available";
+    stagedFiles = [];
+    renderStagedPreviews();
+
+    toast("Published!");
+  } catch (e) {
+    console.error(e);
+    // This is the error you saw: storage/unauthorized
+    toast(`Publish failed: ${e?.message || e}`);
   }
-};
-
-// ---------- Modal + delete ----------
-window.deleteArtwork = async () => {
-  if (!isAdmin()) return alert("Admin only");
-  if (!currentArtworkId) return alert("No artwork selected.");
-
-  if (!confirm("Delete this artwork?")) return;
-  try {
-    await deleteDoc(doc(db, COL_ARTWORKS, currentArtworkId));
-    document.getElementById("imgModal").classList.add("hidden");
-    document.body.style.overflow = "auto";
-    alert("Deleted.");
-  } catch (err) {
-    alert("Delete failed: " + err.message);
-  }
-};
-
-function openArtworkModal(art) {
-  currentArtworkId = art.id;
-  const modal = document.getElementById("imgModal");
-  const container = document.getElementById("modalImagesContainer");
-  container.innerHTML = "";
-
-  (art.images || []).forEach(src => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.className = "w-full h-auto object-contain shadow-2xl border-4 border-stone-800 mb-4";
-    container.appendChild(img);
-  });
-
-  document.getElementById("modalTitle").innerText = art.title_zh || "";
-  document.getElementById("modalDesc").innerText = art.desc_zh || "";
-  document.getElementById("modalStatus").innerText = art.status || "";
-
-  // 管理员面板
-  document.getElementById("img-admin-edit-panel")?.classList.toggle("hidden", !isAdmin());
-
-  modal.classList.remove("hidden");
-  document.body.style.overflow = "hidden";
 }
 
-window.closeModal = () => {
-  document.getElementById("imgModal").classList.add("hidden");
-  document.body.style.overflow = "auto";
-};
-</script>
+// ===============================
+// Admin: update status & delete artwork
+// ===============================
+async function adminUpdateStatus() {
+  if (!currentUser || !isAdmin) { toast("Admin only."); return; }
+  if (!selectedArtworkId) return;
 
+  const newStatus = $("modal-status-select").value;
+  await updateDoc(doc(db, "artworks", selectedArtworkId), { status: newStatus });
+  toast("Status updated.");
+}
 
+async function adminDeleteArtwork() {
+  if (!currentUser || !isAdmin) { toast("Admin only."); return; }
+  if (!selectedArtworkId) return;
+
+  const ok = confirm("Delete this artwork? This will remove Firestore doc and attempt to delete Storage files.");
+  if (!ok) return;
+
+  const artRef = doc(db, "artworks", selectedArtworkId);
+  const snap = await getDoc(artRef);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  const paths = data.imagePaths || [];
+
+  // Delete Firestore doc first (so UI updates quickly)
+  await deleteDoc(artRef);
+
+  // Best-effort delete storage files
+  for (const p of paths) {
+    try {
+      await deleteObject(ref(storage, p));
+    } catch (e) {
+      console.warn("Failed to delete storage object:", p, e);
+    }
+  }
+
+  toast("Artwork deleted.");
+  closeModal();
+}
+
+// ===============================
+// Admin: users list
+// ===============================
+async function loadUsersList() {
+  if (!currentUser || !isAdmin) { toast("Admin only."); return; }
+  const box = $("user-list-content");
+  box.innerHTML = `<div class="text-stone-400">Loading...</div>`;
+  const qs = await getDocs(query(collection(db, "users"), orderBy("createdAt", "desc")));
+  if (qs.empty) {
+    box.innerHTML = `<div class="text-stone-400">No users.</div>`;
+    return;
+  }
+  box.innerHTML = "";
+  qs.forEach(d => {
+    const u = d.data();
+    const row = document.createElement("div");
+    row.className = "flex items-center justify-between border-b border-stone-200 pb-2";
+    row.innerHTML = `
+      <div>
+        <div class="font-bold text-stone-700">${escapeHtml(u.displayName || "(no nick)")}</div>
+        <div class="text-stone-500">${escapeHtml(u.email || "")}</div>
+      </div>
+      <div class="text-stone-400">${u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString() : ""}</div>
+    `;
+    box.appendChild(row);
+  });
+}
+
+// ===============================
+// Navbar & mobile menu
+// ===============================
+function setupNavbar() {
+  const navbar = $("navbar");
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 50) navbar.classList.add("shadow-md");
+    else navbar.classList.remove("shadow-md");
+  });
+
+  $("mobile-menu-btn").addEventListener("click", () => {
+    $("mobile-menu").classList.toggle("hidden");
+  });
+}
+
+// ===============================
+// Gallery filter
+// ===============================
+function setupFilters() {
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => {
+        b.classList.remove("text-[#a83f39]", "border-b", "border-[#a83f39]");
+      });
+      btn.classList.add("text-[#a83f39]", "border-b", "border-[#a83f39]");
+
+      const f = btn.dataset.filter;
+      document.querySelectorAll("#gallery-grid > div").forEach(card => {
+        const cat = card.dataset.category || "all";
+        if (f === "all" || cat === f) card.style.display = "";
+        else card.style.display = "none";
+      });
+    });
+  });
+}
+
+// ===============================
+// Bind UI events
+// ===============================
+function bindUI() {
+  // language
+  $("lang-btn").addEventListener("click", () => applyLang(currentLang === "en" ? "zh" : "en"));
+  $("lang-btn-mobile").addEventListener("click", () => applyLang(currentLang === "en" ? "zh" : "en"));
+
+  // auth modal open
+  $("signin-btn").addEventListener("click", () => {
+    if (currentUser) {
+      // signed in: clicking name opens admin modal if admin, else do nothing
+      openAuthModal();
+    } else {
+      openAuthModal();
+    }
+  });
+  $("signin-btn-mobile").addEventListener("click", () => openAuthModal());
+
+  // auth modal close
+  $("auth-close").addEventListener("click", closeAuthModal);
+  $("authModal").addEventListener("click", (e) => { if (e.target === $("authModal")) closeAuthModal(); });
+
+  // tabs
+  $("tab-login").addEventListener("click", showLoginTab);
+  $("tab-register").addEventListener("click", showRegisterTab);
+
+  // login
+  $("login-submit").addEventListener("click", async () => {
+    const email = $("login-email").value.trim();
+    const pw = $("login-password").value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pw);
+      closeAuthModal();
+      toast("Signed in!");
+    } catch (e) {
+      console.error(e);
+      toast(e?.message || "Sign in failed.");
+    }
+  });
+
+  // register
+  $("reg-submit").addEventListener("click", async () => {
+    const email = $("reg-email").value.trim();
+    const pw = $("reg-password").value;
+    const nick = $("reg-nick").value.trim();
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pw);
+      if (nick) await updateProfile(cred.user, { displayName: nick });
+
+      await upsertUserProfile(cred.user);
+
+      closeAuthModal();
+      toast("Registered and signed in!");
+    } catch (e) {
+      console.error(e);
+      toast(e?.message || "Register failed.");
+    }
+  });
+
+  // sign out
+  $("signout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    setAdminFlag(false); // clear admin on logout
+    toast("Signed out.");
+  });
+  $("signout-btn-mobile").addEventListener("click", async () => {
+    await signOut(auth);
+    setAdminFlag(false);
+    toast("Signed out.");
+  });
+
+  // admin modal
+  $("admin-btn").addEventListener("click", () => openAdminModal());
+  $("admin-close").addEventListener("click", closeAdminModal);
+  $("adminModal").addEventListener("click", (e) => { if (e.target === $("adminModal")) closeAdminModal(); });
+
+  // admin verify key
+  $("admin-verify").addEventListener("click", () => {
+    const key = $("admin-key").value;
+    if (!currentUser) {
+      $("admin-status").textContent = "Please sign in first.";
+      return;
+    }
+    if (key === ADMIN_KEY) {
+      $("admin-status").textContent = "Admin enabled on this device.";
+      setAdminFlag(true);
+    } else {
+      $("admin-status").textContent = "Wrong admin key.";
+      setAdminFlag(false);
+    }
+  });
+
+  // admin publish
+  $("publish-artwork").addEventListener("click", publishArtwork);
+  $("load-users").addEventListener("click", loadUsersList);
+
+  // modal close
+  $("modal-close").addEventListener("click", closeModal);
+  $("imgModal").addEventListener("click", (e) => {
+    if (e.target === $("imgModal")) closeModal();
+  });
+
+  // likes & comments
+  $("like-btn").addEventListener("click", likeCurrentArtwork);
+  $("post-comment-btn").addEventListener("click", postComment);
+
+  // admin update & delete
+  $("status-update-btn").addEventListener("click", adminUpdateStatus);
+  $("delete-btn").addEventListener("click", adminDeleteArtwork);
+
+  // video change (admin)
+  $("video-edit-btn").addEventListener("click", async () => {
+    if (!isAdmin || !currentUser) return toast("Admin only.");
+    const input = prompt("Paste YouTube Shorts URL or Shorts ID:");
+    if (!input) return;
+
+    // Extract ID from URL like https://www.youtube.com/shorts/xxxx
+    let id = input.trim();
+    const m = id.match(/shorts\/([a-zA-Z0-9_-]{6,})/);
+    if (m) id = m[1];
+    // or watch?v=
+    const m2 = id.match(/v=([a-zA-Z0-9_-]{6,})/);
+    if (m2) id = m2[1];
+
+    await setAboutVideoShortsId(id);
+  });
+
+  // artist avatar upload
+  $("artist-file-input").addEventListener("change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    await uploadArtistAvatar(f);
+    e.target.value = "";
+  });
+
+  // drop zone
+  setupDropZone();
+
+  // filters
+  setupFilters();
+}
+
+// ===============================
+// Auth observer
+// ===============================
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user || null;
+
+  // IMPORTANT: avoid "false signed in" alerts
+  // We do NOT auto-alert here.
+  updateAuthUI();
+
+  if (currentUser) {
+    try { await upsertUserProfile(currentUser); } catch {}
+  } else {
+    // not signed in -> force admin false (but keep local flag if you want)
+    // We keep local flag, BUT admin actions still require currentUser
+    // So unauthorized won't happen silently.
+  }
+});
+
+// ===============================
+// Storage rules note (WHY you get storage/unauthorized)
+// ===============================
+// 你的报错 "storage/unauthorized" 说明：Firebase Storage Rules 现在不允许未登录用户写入
+// 这是正确的！
+// 但你“右上角还显示 Sign In”说明你其实没真的登录成功（或者域名未加入 Authorized domains）
+// 所以 Storage 拒绝写入，这是正常现象。
+// 解决步骤：
+// 1) Firebase Console -> Authentication -> Settings -> Authorized domains 添加：liusiyu4141-blip.github.io
+// 2) Authentication -> Sign-in method -> 开启 Email/Password
+// 3) Storage -> Rules (临时开发) 允许登录用户写： allow write: if request.auth != null;
+// 4) 刷新网页，重新登录，再上传
+
+// ===============================
+// Initialize
+// ===============================
+function initIcons() {
+  lucide.createIcons();
+}
+
+async function init() {
+  initIcons();
+  setupNavbar();
+  bindUI();
+
+  loadAdminFlagFromLocal();
+  updateAdminUI();
+
+  applyLang("en");
+
+  await loadAboutVideo();
+  await loadArtistProfile();
+
+  subscribeArtworks();
+}
+
+init();
+
+  </script>
 </body>
 </html>
