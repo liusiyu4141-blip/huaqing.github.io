@@ -727,751 +727,441 @@
     window.applyLanguage();
   </script>
 
-  <!-- ========= PART 2/3 will be pasted below ========= -->
-  <!-- Part 2: Firebase Auth + Firestore (users/comments/likes/artworks meta) -->
-  <!-- Part 3: Firebase Storage (upload avatar / upload artwork images) -->
-  <script type="module">
-  /**
-   * FINAL: Firebase Auth + Firestore + Storage (GitHub Pages friendly)
-   * Project: qinghua-852c1
-   *
-   * Works:
-   * - Email/password register & login
-   * - Save user profile: email + nickname
-   * - Likes & comments (login required)
-   * - Admin unlock (key: qinghua666) => publish / status / delete / edit about video / see user list
-   * - Upload artwork images to Storage (multi-image)
-   * - Upload artist avatar to Storage (drag & drop)
-   * - Delete artwork also deletes its Storage images (best effort)
-   */
-
+ <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc,
-    query, orderBy, onSnapshot, serverTimestamp, increment, where, limit
-  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-  import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-    onAuthStateChanged
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut
   } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
   import {
-    getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject
+    getFirestore,
+    doc, setDoc, getDoc,
+    collection, addDoc, getDocs,
+    updateDoc, deleteDoc,
+    onSnapshot, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+  import {
+    getStorage,
+    ref as sRef,
+    uploadBytes,
+    getDownloadURL
   } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-  // ----------------------------
-  // 0) Firebase config (yours)
-  // ----------------------------
+  // ✅ 用你自己的 firebaseConfig（你发的那份）
   const firebaseConfig = {
     apiKey: "AIzaSyBDvZ7oykdugl6DQH_p-0KOgy0sfMuMmFc",
     authDomain: "qinghua-852c1.firebaseapp.com",
     projectId: "qinghua-852c1",
-    storageBucket: "qinghua-852c1.firebasestorage.app",
+    // ⚠️ 建议改成 appspot.com（Firebase Web 最常用的 bucket 形式）
+    storageBucket: "qinghua-852c1.appspot.com",
     messagingSenderId: "391709518256",
     appId: "1:391709518256:web:a18730b2d099c362e9ce75",
     measurementId: "G-8T36VSX6B6"
   };
 
+  // ✅ 填你的管理员 UID（来自 Firebase Console → Authentication → Users）
+  const ADMIN_UID = "把你的管理员UID粘贴在这里";
+
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
   const auth = getAuth(app);
+  const db = getFirestore(app);
   const storage = getStorage(app);
 
-  // ----------------------------
-  // 1) Collections / Docs
-  // ----------------------------
-  const USERS = collection(db, "users");
-  const ARTWORKS = collection(db, "artworks");
-  const COMMENTS = collection(db, "comments");
-  const SITE_CONFIG = doc(db, "site_config", "main");
-  const ARTIST_PROFILE = doc(db, "artist_profile", "main");
+  // 你的 Firestore collections（可按你原来命名）
+  const COL_ARTWORKS = "artworks";
+  const COL_USERS = "users";
+  const COL_COMMENTS = "comments";
+  const DOC_ARTIST = "site/artist";   // 作者信息存一个 doc
+  const DOC_CONFIG = "site/config";   // 视频 URL 等配置
 
-  // ----------------------------
-  // 2) Local state
-  // ----------------------------
   let currentUser = null;
-  let currentProfile = null;  // {email,nickname}
-  let isAdmin = localStorage.getItem("hq_admin") === "true";
+  let isAdmin = false;
   let currentArtworkId = null;
-  let currentArtworkData = null;
 
-  // uploads for "Add artwork"
-  let uploadQueueFiles = [];  // File[]
-  let uploadPreviewURLs = []; // blob url for preview
+  // ======== UI 绑定（你可以沿用你原来的 modal 结构，只要 id 对得上） ========
 
-  const getLang = () => localStorage.getItem("huaqing_lang") || "en";
+  window.openAuthModal = (tab="login") => {
+    document.getElementById("authModal").classList.remove("hidden");
+    window.switchAuthTab(tab);
+  };
 
-  // ----------------------------
-  // 3) DOM helpers
-  // ----------------------------
-  function $(id) { return document.getElementById(id); }
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+  window.switchAuthTab = (tab) => {
+    document.getElementById("form-login").classList.toggle("hidden", tab !== "login");
+    document.getElementById("form-register").classList.toggle("hidden", tab !== "register");
+  };
 
-  function applyAdminUI() {
-    if (isAdmin) {
-      document.body.classList.add("is-admin");
-      $("admin-badge")?.classList.remove("hidden");
-      $("add-artwork-fab")?.classList.remove("hidden");
-      $("artist-upload-hint")?.classList.remove("hidden");
-      $("video-edit-btn")?.classList.remove("hidden");
-    } else {
-      document.body.classList.remove("is-admin");
-      $("admin-badge")?.classList.add("hidden");
-      $("add-artwork-fab")?.classList.add("hidden");
-      $("artist-upload-hint")?.classList.add("hidden");
-      $("video-edit-btn")?.classList.add("hidden");
-      $("img-admin-edit-panel")?.classList.add("hidden");
-    }
-  }
-  applyAdminUI();
+  // ✅ 登录（Email + Password）
+  window.handleUserLogin = async () => {
+    const email = document.getElementById("login-email").value.trim();
+    const pass = document.getElementById("login-pass").value.trim();
+    if (!email || !pass) return alert("Please enter email and password.");
 
-  // safe modal close helper (works with your existing HTML)
-  window.closeModalById = (id) => $(id)?.classList.add("hidden");
-
-  // ----------------------------
-  // 4) Auth UI hooks
-  // ----------------------------
-  window.updateAuthUI = () => {
-    const nameEl = $("user-name-display");
-    if (nameEl) {
-      if (currentProfile?.nickname) {
-        nameEl.innerText = currentProfile.nickname;
-        nameEl.title = getLang()==="zh" ? "点击退出登录" : "Click to sign out";
-      } else {
-        nameEl.innerText = (getLang() === "zh" ? "登录/注册" : "Sign In");
-        nameEl.title = "";
-      }
-    }
-
-    const tip = $("comment-login-tip");
-    const input = $("new-comment-input");
-    const btn = document.querySelector('#comment-form-container button');
-
-    if (!currentUser) {
-      tip?.classList.remove("hidden");
-      input?.setAttribute("disabled", "true");
-      input?.classList.add("opacity-50");
-      btn?.setAttribute("disabled", "true");
-      btn?.classList.add("opacity-50");
-    } else {
-      tip?.classList.add("hidden");
-      input?.removeAttribute("disabled");
-      input?.classList.remove("opacity-50");
-      btn?.removeAttribute("disabled");
-      btn?.classList.remove("opacity-50");
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      document.getElementById("authModal").classList.add("hidden");
+    } catch (e) {
+      alert("Login failed: " + e.message);
     }
   };
 
-  // click on user section: if logged in -> sign out, else open auth modal
-  window.openAuthModal = (tab) => {
-    $("authModal")?.classList.remove("hidden");
-    window.switchAuthTab?.(tab || "login");
+  // ✅ 注册（Email + Password + Nickname）
+  window.handleUserRegister = async () => {
+    const email = document.getElementById("reg-email").value.trim();
+    const pass = document.getElementById("reg-pass").value.trim();
+    const nick = document.getElementById("reg-nick").value.trim();
+    if (!email || !pass || !nick) return alert("Please enter email, password, and nickname.");
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      // 存用户资料，后台可看邮箱+昵称
+      await setDoc(doc(db, COL_USERS, cred.user.uid), {
+        email, nickname: nick, createdAt: serverTimestamp()
+      });
+      document.getElementById("authModal").classList.add("hidden");
+    } catch (e) {
+      alert("Register failed: " + e.message);
+    }
   };
 
-  window.handleUserSectionClick = async () => {
+  window.logout = async () => {
+    await signOut(auth);
+  };
+
+  function setAdminUI(flag) {
+    // 你页面里这些元素：只有管理员才显示
+    document.getElementById("add-artwork-fab")?.classList.toggle("hidden", !flag);
+    document.getElementById("artist-upload-hint")?.classList.toggle("hidden", !flag);
+    document.getElementById("video-edit-btn")?.classList.toggle("hidden", !flag);
+    // modal 里的 admin panel
+    document.getElementById("img-admin-edit-panel")?.classList.toggle("hidden", !flag);
+  }
+
+  function updateAuthUI() {
+    const el = document.getElementById("user-name-display");
+    if (!el) return;
     if (!currentUser) {
-      window.openAuthModal("login");
+      el.innerText = "Sign In";
       return;
     }
-    if (confirm(getLang()==="zh" ? "退出登录？" : "Sign out?")) {
-      await signOut(auth);
+    // 显示 nickname（没有就显示邮箱）
+    el.innerText = currentUser.nickname || currentUser.email || "User";
+  }
+
+  // ✅ 关键：监听登录状态（不再匿名登录，所以不会“莫名其妙 Signed in”）
+  onAuthStateChanged(auth, async (u) => {
+    if (!u) {
+      currentUser = null;
+      isAdmin = false;
+      setAdminUI(false);
+      updateAuthUI();
+      return;
     }
-  };
 
-  window.authRegister = async () => {
-    const nickname = $("reg-nickname")?.value?.trim();
-    const email = $("reg-email")?.value?.trim();
-    const password = $("reg-password")?.value;
+    isAdmin = (u.uid === ADMIN_UID);
 
-    if (!nickname) return alert(getLang()==="zh" ? "请填写昵称" : "Please enter a nickname");
-    if (!email || !email.includes("@")) return alert(getLang()==="zh" ? "请填写正确邮箱" : "Please enter a valid email");
-    if (!password || password.length < 6) return alert(getLang()==="zh" ? "密码至少6位" : "Password must be 6+ chars");
-
+    // 读取用户 profile（昵称）
+    let profile = null;
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, "users", cred.user.uid), {
-        email, nickname, createdAt: serverTimestamp()
-      });
-      alert(getLang()==="zh" ? "注册成功！" : "Registered!");
-      window.closeModalById("authModal");
-    } catch (e) {
-      alert((getLang()==="zh" ? "注册失败：" : "Register failed: ") + e.message);
-    }
-  };
+      const snap = await getDoc(doc(db, COL_USERS, u.uid));
+      profile = snap.exists() ? snap.data() : null;
+    } catch {}
 
-  window.authLogin = async () => {
-    const email = $("login-email")?.value?.trim();
-    const password = $("login-password")?.value;
+    currentUser = {
+      uid: u.uid,
+      email: u.email,
+      nickname: profile?.nickname
+    };
 
-    if (!email || !email.includes("@")) return alert(getLang()==="zh" ? "请填写正确邮箱" : "Please enter a valid email");
-    if (!password) return alert(getLang()==="zh" ? "请输入密码" : "Please enter password");
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert(getLang()==="zh" ? "登录成功！" : "Signed in!");
-      window.closeModalById("authModal");
-    } catch (e) {
-      alert((getLang()==="zh" ? "登录失败：" : "Login failed: ") + e.message);
-    }
-  };
-
-  onAuthStateChanged(auth, async (user) => {
-    currentUser = user || null;
-    currentProfile = null;
-
-    if (currentUser) {
-      const ref = doc(db, "users", currentUser.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        currentProfile = snap.data();
-      } else {
-        currentProfile = { email: currentUser.email, nickname: currentUser.email?.split("@")[0] || "User" };
-        await setDoc(ref, { ...currentProfile, createdAt: serverTimestamp() }, { merge: true });
-      }
-    }
-    window.updateAuthUI();
+    setAdminUI(isAdmin);
+    updateAuthUI();
   });
 
-  // ----------------------------
-  // 5) Admin
-  // ----------------------------
-  window.adminLogin = () => {
-    const key = $("admin-key")?.value;
-    if (key === "qinghua666") {
-      isAdmin = true;
-      localStorage.setItem("hq_admin", "true");
-      applyAdminUI();
-      $("admin-panel")?.classList.remove("hidden");
-      $("admin-auth-form")?.classList.add("hidden");
-      $("admin-dashboard")?.classList.remove("hidden");
-      alert("Admin enabled ✅");
-      if (currentArtworkId) $("img-admin-edit-panel")?.classList.remove("hidden");
-    } else {
-      alert(getLang()==="zh" ? "口令错误" : "Wrong key");
-    }
-  };
+  // ======== 下面：把 Storage 上传封装成函数，供 Part2 调用 ========
+  async function uploadImageToStorage(file, folder) {
+    if (!auth.currentUser) throw new Error("Please sign in first.");
+    if (!isAdmin) throw new Error("Admin only.");
 
-  window.openUserList = async () => {
-    if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可查看" : "Admin only");
-    const box = $("user-list");
-    if (!box) return;
-    box.classList.remove("hidden");
-    box.innerHTML = "Loading...";
-    const qy = query(USERS, orderBy("createdAt", "desc"), limit(200));
-    const snap = await getDocs(qy);
-    if (snap.empty) {
-      box.innerHTML = "<div class='text-stone-500'>No users yet.</div>";
-      return;
-    }
-    const rows = [];
-    snap.forEach(d => {
-      const u = d.data();
-      rows.push(`<div class="flex justify-between border-b border-stone-200 py-1">
-        <span><b>${escapeHtml(u.nickname || "")}</b> <span class="text-stone-500">(${escapeHtml(u.email || "")})</span></span>
-      </div>`);
-    });
-    box.innerHTML = rows.join("");
-  };
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${folder}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
+    const storageRef = sRef(storage, path);
 
-  // admin update about video url (Shorts supported) + loop embed
-  window.adminEditAboutVideo = async () => {
-    if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可操作" : "Admin only");
-    const url = prompt("Enter YouTube video/shorts URL:", "https://www.youtube.com/shorts/zN0VzZRzlqM");
-    if (!url) return;
-
-    const id = extractYouTubeId(url);
-    if (!id) return alert("Invalid YouTube URL");
-
-    const embed = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&playsinline=1&modestbranding=1&rel=0`;
-
-    await setDoc(SITE_CONFIG, { aboutVideoUrl: embed, updatedAt: serverTimestamp() }, { merge: true });
-    alert("Video updated ✅");
-  };
-
-  // ----------------------------
-  // 6) Gallery realtime
-  // ----------------------------
-  const artworksQuery = query(ARTWORKS, orderBy("createdAt", "desc"));
-  onSnapshot(artworksQuery, (snapshot) => {
-    const all = [];
-    snapshot.forEach(d => all.push({ id: d.id, ...d.data() }));
-    if (all.length === 0) {
-      seedDefaultArtworks().catch(console.error);
-      return;
-    }
-    window.__allArtworks = all;
-    const active = document.querySelector(".filter-btn.border-b")?.getAttribute("data-filter") || "all";
-    renderGallery(active);
-  });
-
-  window.filterGallery = (cat) => {
-    document.querySelectorAll('.filter-btn')
-      .forEach(b => b.classList.remove('text-[#a83f39]','border-b','border-[#a83f39]'));
-    const el = document.querySelector(`.filter-btn[data-filter="${cat}"]`);
-    if (el) el.classList.add('text-[#a83f39]','border-b','border-[#a83f39]');
-    renderGallery(cat);
-  };
-
-  function renderGallery(cat) {
-    const grid = $("gallery-grid");
-    if (!grid) return;
-
-    const list = window.__allArtworks || [];
-    const filtered = (cat === "all") ? list : list.filter(x => x.category === cat);
-
-    grid.innerHTML = "";
-    if (filtered.length === 0) {
-      grid.innerHTML = `<div class="col-span-full text-center text-stone-500 py-16">${getLang()==="zh" ? "暂无作品" : "No artworks yet."}</div>`;
-      return;
-    }
-
-    filtered.forEach(art => {
-      const title = (getLang()==="zh") ? (art.title_zh || art.title_en || "") : (art.title_en || art.title_zh || "");
-      const desc = (getLang()==="zh") ? (art.desc_zh || "") : (art.desc_en || "");
-      const status = art.status || "Available";
-      const mainImg = (art.images && art.images.length>0) ? art.images[0] : "";
-      const statusClass =
-        (status === "Sold") ? "bg-stone-700 text-stone-300" :
-        (status === "Reserved") ? "bg-stone-500 text-white" :
-        "bg-[#a83f39] text-white";
-
-      const card = document.createElement("div");
-      card.className = "group cursor-pointer break-inside-avoid mb-8 relative";
-
-      card.innerHTML = `
-        <div class="bg-white shadow-md rounded overflow-hidden relative">
-          ${mainImg ? `<img src="${mainImg}" alt="${escapeHtml(title)}" class="w-full h-auto object-cover">`
-                    : `<div class="w-full h-64 bg-stone-100 flex items-center justify-center text-stone-400">No Image</div>`}
-          <div class="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors z-20 flex items-center justify-center">
-            <span class="text-white border border-white px-6 py-2 tracking-widest text-sm font-song-art opacity-0 group-hover:opacity-100 transition-opacity">VIEW</span>
-          </div>
-        </div>
-        <div class="mt-4 text-center">
-          <h3 class="text-xl font-bold text-stone-800 font-serif">${escapeHtml(title)}</h3>
-          <p class="text-stone-500 text-sm mt-1 font-serif italic">${escapeHtml(desc)}</p>
-          <div class="mt-2 flex items-center justify-center gap-2">
-            <span class="inline-block px-2 py-0.5 text-xs ${statusClass} font-sans uppercase tracking-widest">${status}</span>
-          </div>
-        </div>
-      `;
-
-      card.addEventListener("click", () => openArtworkModal(art));
-      grid.appendChild(card);
-    });
-
-    lucide.createIcons();
+    const bytes = await file.arrayBuffer();
+    await uploadBytes(storageRef, new Uint8Array(bytes), { contentType: file.type || "image/jpeg" });
+    return await getDownloadURL(storageRef);
   }
 
-  async function openArtworkModal(art) {
-    currentArtworkId = art.id;
-    currentArtworkData = art;
-
-    const container = $("modalImagesContainer");
-    container.innerHTML = "";
-    const imgs = (art.images && art.images.length>0) ? art.images : [];
-    if (imgs.length === 0) {
-      container.innerHTML = `<div class="text-stone-400 text-center py-12">No images</div>`;
-    } else {
-      imgs.forEach(src => {
-        const img = document.createElement("img");
-        img.src = src;
-        img.className = "w-full h-auto object-contain shadow-2xl border-4 border-stone-800 mb-4";
-        container.appendChild(img);
-      });
-    }
-
-    const title = (getLang()==="zh") ? (art.title_zh || art.title_en || "") : (art.title_en || art.title_zh || "");
-    const desc  = (getLang()==="zh") ? (art.desc_zh || "") : (art.desc_en || "");
-
-    $("modalTitle").innerText = title;
-    $("modalDesc").innerText = desc;
-    $("modalStatus").innerText = art.status || "Available";
-    $("likeCount").innerText = String(art.likes || 0);
-
-    if (isAdmin) {
-      $("img-admin-edit-panel")?.classList.remove("hidden");
-      $("modal-status-select").value = art.status || "Available";
-    } else {
-      $("img-admin-edit-panel")?.classList.add("hidden");
-    }
-
-    subscribeComments(art.id);
-
-    $("imgModal").classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-    window.updateAuthUI();
-  }
-
-  window.closeArtworkModal = () => {
-    $("imgModal")?.classList.add("hidden");
-    document.body.style.overflow = "auto";
+  // 暴露给 Part2
+  window.__APP__ = {
+    auth, db, storage,
+    isAdmin: () => isAdmin,
+    currentUser: () => currentUser,
+    uploadImageToStorage,
+    COL_ARTWORKS, COL_USERS, COL_COMMENTS, DOC_ARTIST, DOC_CONFIG
   };
+   // ================= Part 2: Admin features + Gallery =================
+const { db, uploadImageToStorage, isAdmin, currentUser,
+        COL_ARTWORKS, COL_COMMENTS, DOC_ARTIST, DOC_CONFIG } = window.__APP__;
 
-  // ----------------------------
-  // 7) Likes + Comments
-  // ----------------------------
-  window.toggleLike = async () => {
-    if (!currentArtworkId) return;
-    if (!currentUser) return alert(getLang()==="zh" ? "请先登录后点赞" : "Please sign in to like");
+import {
+  doc, setDoc, getDoc,
+  collection, addDoc, getDocs,
+  updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    try {
-      await updateDoc(doc(db, "artworks", currentArtworkId), { likes: increment(1) });
-      const now = Number($("likeCount").innerText || "0") + 1;
-      $("likeCount").innerText = String(now);
-    } catch (e) {
-      alert("Like failed: " + e.message);
-    }
-  };
-
-  let commentsUnsub = null;
-  function subscribeComments(artworkId) {
-    if (commentsUnsub) commentsUnsub();
-
-    const listEl = $("comments-list");
-    listEl.innerHTML = `<div class="text-stone-400 text-sm">Loading...</div>`;
-
-    const qy = query(COMMENTS, where("artworkId", "==", artworkId), orderBy("createdAt", "desc"));
-    commentsUnsub = onSnapshot(qy, (snap) => {
-      listEl.innerHTML = "";
-      if (snap.empty) {
-        listEl.innerHTML = `<div class="text-stone-400 text-sm">${getLang()==="zh" ? "暂无评论" : "No comments yet."}</div>`;
-        return;
-      }
-      snap.forEach(d => {
-        const c = d.data();
-        const div = document.createElement("div");
-        div.className = "bg-stone-800 p-2 rounded text-sm";
-        div.innerHTML = `<span class="text-[#a83f39] font-sans">${escapeHtml(c.nickname || "User")}:</span> ${escapeHtml(c.text || "")}`;
-        listEl.appendChild(div);
-      });
-    });
+// ---------- YouTube Shorts -> Embed ----------
+function normalizeYouTubeEmbed(url) {
+  // 支持：youtube.com/shorts/xxxx、youtu.be/xxxx、youtube.com/watch?v=xxxx
+  try {
+    const u = new URL(url);
+    let id = "";
+    if (u.hostname.includes("youtu.be")) id = u.pathname.replace("/", "");
+    else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/shorts/")[1].split("?")[0];
+    else id = u.searchParams.get("v") || "";
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}`;
+  } catch {
+    return null;
   }
+}
 
-  window.postComment = async () => {
-    if (!currentArtworkId) return;
-    if (!currentUser) return alert(getLang()==="zh" ? "请先登录后评论" : "Please sign in to comment");
+function setAboutVideo(url) {
+  const wrap = document.getElementById("painting-process-video");
+  if (!wrap) return;
+  const embed = normalizeYouTubeEmbed(url);
 
-    const input = $("new-comment-input");
-    const text = input.value.trim();
-    if (!text) return;
+  // 自适应窗口（Shorts 9:16）
+  wrap.classList.add("relative", "w-full", "overflow-hidden", "rounded", "bg-black");
 
-    try {
-      await addDoc(COMMENTS, {
-        artworkId: currentArtworkId,
-        uid: currentUser.uid,
-        nickname: currentProfile?.nickname || "User",
-        text,
-        createdAt: serverTimestamp()
-      });
-      input.value = "";
-    } catch (e) {
-      alert("Comment failed: " + e.message);
-    }
-  };
-
-  // ----------------------------
-  // 8) Storage Upload (Artwork images + Artist avatar)
-  // ----------------------------
-  // A) Artwork upload handling (drop zone + file input)
-  window.handleFiles = (files) => {
-    uploadQueueFiles = [];
-    clearPreviews();
-
-    const arr = Array.from(files || []);
-    const imgs = arr.filter(f => f.type.startsWith("image/"));
-    if (imgs.length === 0) return;
-
-    // limit to avoid crazy uploads
-    const limited = imgs.slice(0, 10);
-
-    limited.forEach(f => {
-      uploadQueueFiles.push(f);
-      const url = URL.createObjectURL(f);
-      uploadPreviewURLs.push(url);
-      addPreview(url);
-    });
-  };
-
-  function addPreview(url) {
-    const box = $("upload-previews");
-    if (!box) return;
-    const img = document.createElement("img");
-    img.src = url;
-    img.className = "h-full w-auto rounded border";
-    box.appendChild(img);
+  if (embed) {
+    // 9:16 比例
+    wrap.style.aspectRatio = "9 / 16";
+    wrap.innerHTML = `
+      <iframe
+        class="absolute inset-0 w-full h-full"
+        src="${embed}"
+        title="About Video"
+        frameborder="0"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowfullscreen>
+      </iframe>`;
+  } else {
+    // 不是 YouTube 就当 mp4
+    wrap.style.aspectRatio = "16 / 9";
+    wrap.innerHTML = `
+      <video class="absolute inset-0 w-full h-full object-cover"
+        src="${url}" autoplay muted loop playsinline controls></video>`;
   }
+}
 
-  function clearPreviews() {
-    const box = $("upload-previews");
-    if (box) box.innerHTML = "";
-    uploadPreviewURLs.forEach(u => URL.revokeObjectURL(u));
-    uploadPreviewURLs = [];
+// ---------- Load config (video url) ----------
+async function loadConfig() {
+  const snap = await getDoc(doc(db, DOC_CONFIG));
+  if (snap.exists() && snap.data().aboutVideoUrl) {
+    setAboutVideo(snap.data().aboutVideoUrl);
   }
+}
+loadConfig();
 
-  // Drop zone behavior
-  const dropArea = $("drop-area");
-  if (dropArea) {
-    dropArea.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropArea.classList.add("dragover");
-    });
-    dropArea.addEventListener("dragleave", () => dropArea.classList.remove("dragover"));
-    dropArea.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropArea.classList.remove("dragover");
-      if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可上传作品" : "Admin only");
-      window.handleFiles(e.dataTransfer.files);
-    });
-  }
+// ---------- Admin: change video ----------
+window.editAboutVideo = async () => {
+  if (!isAdmin()) return alert("Admin only");
+  const newUrl = prompt("Paste YouTube Shorts / YouTube / MP4 URL:", "https://www.youtube.com/shorts/zN0VzZRzlqM");
+  if (!newUrl) return;
+  await setDoc(doc(db, DOC_CONFIG), { aboutVideoUrl: newUrl, updatedAt: serverTimestamp() }, { merge: true });
+  setAboutVideo(newUrl);
+  alert("Video updated.");
+};
 
-  // File input hook
-  const fileElem = $("fileElem");
-  if (fileElem) {
-    fileElem.addEventListener("change", () => {
-      if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可上传作品" : "Admin only");
-      window.handleFiles(fileElem.files);
-    });
-  }
-
-  async function uploadArtworkImagesToStorage(files) {
-    // returns array of {url, path}
-    const results = [];
-    for (const f of files) {
-      const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-      const safeExt = ["jpg","jpeg","png","webp","gif"].includes(ext) ? ext : "jpg";
-      const path = `artworks/${Date.now()}_${Math.random().toString(16).slice(2)}.${safeExt}`;
-      const r = sRef(storage, path);
-      await uploadBytes(r, f, { contentType: f.type || "image/jpeg" });
-      const url = await getDownloadURL(r);
-      results.push({ url, path });
-    }
-    return results;
-  }
-
-  // B) Artist avatar drag & drop upload
-  // Your HTML already has: ondrop="window.handleArtistDrop(event)" ondragover="event.preventDefault()"
-  window.handleArtistDrop = async (e) => {
+// ---------- Admin: drag/drop artist avatar ----------
+const artistBox = document.getElementById("artist-img-container");
+if (artistBox) {
+  artistBox.addEventListener("dragover", (e) => e.preventDefault());
+  artistBox.addEventListener("drop", async (e) => {
     e.preventDefault();
-    if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可修改头像" : "Admin only");
-
+    if (!isAdmin()) return alert("Admin only");
     const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file || !file.type.startsWith("image/")) return alert("Please drop an image file.");
 
     try {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const safeExt = ["jpg","jpeg","png","webp"].includes(ext) ? ext : "jpg";
-      const path = `artist/avatar.${safeExt}`;
-      const r = sRef(storage, path);
-      await uploadBytes(r, file, { contentType: file.type || "image/jpeg" });
-      const url = await getDownloadURL(r);
-
-      await setDoc(ARTIST_PROFILE, { photoUrl: url, photoPath: path, updatedAt: serverTimestamp() }, { merge: true });
-
-      $("artist-img").src = url;
-      alert(getLang()==="zh" ? "头像已更新✅" : "Avatar updated ✅");
-    } catch (e2) {
-      alert("Avatar upload failed: " + e2.message);
+      const url = await uploadImageToStorage(file, "artist");
+      await setDoc(doc(db, DOC_ARTIST), { photoUrl: url, updatedAt: serverTimestamp() }, { merge: true });
+      document.getElementById("artist-img").src = url;
+      alert("Avatar updated.");
+    } catch (err) {
+      alert("Upload failed: " + err.message);
     }
-  };
+  });
+}
 
-  // ----------------------------
-  // 9) Admin: Publish / Status / Delete
-  // ----------------------------
-  window.publishArtwork = async () => {
-    if (!isAdmin) return alert(getLang()==="zh" ? "仅管理员可发布" : "Admin only");
+// ---------- Realtime: artist avatar ----------
+onSnapshot(doc(db, DOC_ARTIST), (snap) => {
+  if (snap.exists() && snap.data().photoUrl) {
+    const img = document.getElementById("artist-img");
+    if (img) img.src = snap.data().photoUrl;
+  }
+});
 
-    const zh = $("new-title-zh")?.value?.trim();
-    const en = $("new-title-en")?.value?.trim();
-    const dzh = $("new-desc-zh")?.value?.trim();
-    const den = $("new-desc-en")?.value?.trim();
-    const cat = $("new-category")?.value;
+// ---------- Gallery realtime ----------
+let allArtworks = [];
+const artworksQ = query(collection(db, COL_ARTWORKS), orderBy("createdAt", "desc"));
+onSnapshot(artworksQ, (snap) => {
+  allArtworks = [];
+  snap.forEach(d => allArtworks.push({ id: d.id, ...d.data() }));
+  renderGallery("all");
+});
 
-    if (!zh && !en) return alert(getLang()==="zh" ? "请填写标题" : "Please enter a title");
-    if (uploadQueueFiles.length === 0) return alert(getLang()==="zh" ? "请上传至少一张作品图" : "Please upload at least 1 image");
+function renderGallery(filterCat="all") {
+  const grid = document.getElementById("gallery-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
 
-    // upload to Storage first
-    try {
-      const uploads = await uploadArtworkImagesToStorage(uploadQueueFiles);
-      const urls = uploads.map(x => x.url);
-      const paths = uploads.map(x => x.path);
+  const list = filterCat === "all" ? allArtworks : allArtworks.filter(a => a.category === filterCat);
+  list.forEach(art => {
+    const mainImg = art.images?.[0];
+    const card = document.createElement("div");
+    card.className = "group cursor-pointer break-inside-avoid mb-8 relative";
+    card.innerHTML = `
+      <div class="bg-white shadow-md rounded overflow-hidden relative">
+        <img src="${mainImg}" class="w-full h-auto object-cover" />
+      </div>
+      <div class="mt-4 text-center">
+        <h3 class="text-xl font-bold text-stone-800 font-serif">${art.title_zh || ""}</h3>
+        <p class="text-stone-500 text-sm mt-1 font-serif italic">${art.desc_zh || ""}</p>
+      </div>`;
+    card.addEventListener("click", () => openArtworkModal(art));
+    grid.appendChild(card);
+  });
+}
 
-      await addDoc(ARTWORKS, {
-        title_zh: zh || en || "",
-        title_en: en || zh || "",
-        desc_zh: dzh || "",
-        desc_en: den || "",
-        category: cat || "flower",
-        status: "Available",
-        images: urls,
-        imagePaths: paths, // for delete cleanup
-        likes: 0,
-        createdAt: serverTimestamp()
+window.filterGallery = (cat) => renderGallery(cat);
+
+// ---------- Add artwork (drag/drop + publish) ----------
+let uploadFiles = [];
+
+window.openAddModal = () => {
+  if (!isAdmin()) return alert("Admin only");
+  document.getElementById("addModal").classList.remove("hidden");
+  uploadFiles = [];
+  const previews = document.getElementById("upload-previews");
+  if (previews) previews.innerHTML = "";
+};
+
+const dropArea = document.getElementById("drop-area");
+if (dropArea) {
+  dropArea.addEventListener("dragover", (e) => { e.preventDefault(); dropArea.classList.add("dragover"); });
+  dropArea.addEventListener("dragleave", () => dropArea.classList.remove("dragover"));
+  dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.classList.remove("dragover");
+    if (!isAdmin()) return alert("Admin only");
+    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+    if (!files.length) return;
+    uploadFiles = files;
+
+    const previews = document.getElementById("upload-previews");
+    if (previews) {
+      previews.innerHTML = "";
+      files.forEach(f => {
+        const img = document.createElement("img");
+        img.className = "h-full w-auto rounded border";
+        img.src = URL.createObjectURL(f);
+        previews.appendChild(img);
       });
-
-      // reset add modal inputs
-      clearPreviews();
-      uploadQueueFiles = [];
-      if (fileElem) fileElem.value = "";
-      ["new-title-zh","new-title-en","new-desc-zh","new-desc-en"].forEach(id => { const el = $(id); if (el) el.value = ""; });
-
-      window.closeModalById("addModal");
-      alert(getLang()==="zh" ? "发布成功✅" : "Published ✅");
-    } catch (e) {
-      alert("Publish failed: " + e.message);
     }
-  };
-
-  window.updateArtworkStatus = async () => {
-    if (!isAdmin) return alert("Admin only");
-    if (!currentArtworkId) return;
-
-    const status = $("modal-status-select").value;
-    try {
-      await updateDoc(doc(db, "artworks", currentArtworkId), { status });
-      $("modalStatus").innerText = status;
-      alert("Status updated ✅");
-    } catch (e) {
-      alert("Update failed: " + e.message);
-    }
-  };
-
-  async function deleteStorageByPath(path) {
-    try {
-      if (!path) return;
-      await deleteObject(sRef(storage, path));
-    } catch {
-      // best effort; ignore
-    }
-  }
-
-  // delete artwork + delete its storage images best-effort
-  window.deleteArtwork = async () => {
-    if (!isAdmin) return alert("Admin only");
-    if (!currentArtworkId) return;
-
-    if (!confirm(getLang()==="zh" ? "确定永久删除该作品？" : "Delete this artwork permanently?")) return;
-
-    try {
-      // cleanup storage (if stored)
-      const paths = currentArtworkData?.imagePaths || [];
-      for (const p of paths) await deleteStorageByPath(p);
-
-      await deleteDoc(doc(db, "artworks", currentArtworkId));
-
-      window.closeArtworkModal();
-      alert(getLang()==="zh" ? "已删除✅" : "Deleted ✅");
-    } catch (e) {
-      alert("Delete failed: " + e.message);
-    }
-  };
-
-  // ----------------------------
-  // 10) Load site config & artist profile
-  // ----------------------------
-  onSnapshot(SITE_CONFIG, (snap) => {
-    if (!snap.exists()) return;
-    const url = snap.data()?.aboutVideoUrl;
-    const iframe = $("about-video-iframe");
-    if (url && iframe) iframe.src = url;
   });
+}
 
-  onSnapshot(ARTIST_PROFILE, (snap) => {
-    if (!snap.exists()) return;
-    const photoUrl = snap.data()?.photoUrl;
-    const img = $("artist-img");
-    if (photoUrl && img) img.src = photoUrl;
-  });
+window.addNewArtwork = async () => {
+  if (!isAdmin()) return alert("Admin only");
 
-  // ----------------------------
-  // 11) Seed demo data
-  // ----------------------------
-  async function seedDefaultArtworks() {
-    const flagKey = "hq_seeded_once";
-    if (localStorage.getItem(flagKey) === "true") return;
-    localStorage.setItem(flagKey, "true");
+  const titleZh = document.getElementById("new-title-zh").value.trim();
+  const titleEn = document.getElementById("new-title-en").value.trim();
+  const descZh  = document.getElementById("new-desc-zh").value.trim();
+  const descEn  = document.getElementById("new-desc-en").value.trim();
+  const cat     = document.getElementById("new-category").value;
 
-    const seeds = [
-      {
-        title_zh: "《荷塘月色》",
-        title_en: "Moonlit Lotus",
-        desc_zh: "66cm × 66cm｜绢本设色",
-        desc_en: "66cm × 66cm | Mineral pigment on silk",
-        status: "Sold",
-        category: "bird_flower",
-        images: ["https://images.unsplash.com/photo-1599579634024-e9109033285e?q=80&w=2670&auto=format&fit=crop"],
-        likes: 32
-      },
-      {
-        title_zh: "《锦瑟年华》",
-        title_en: "Golden Years",
-        desc_zh: "45cm × 90cm｜纸本设色",
-        desc_en: "45cm × 90cm | Color on paper",
-        status: "Available",
-        category: "flower",
-        images: ["https://images.unsplash.com/photo-1535359056830-d4badde79747?q=80&w=2671&auto=format&fit=crop"],
-        likes: 28
-      },
-      {
-        title_zh: "《孔雀》",
-        title_en: "Peacock",
-        desc_zh: "水墨设色｜宣纸",
-        desc_en: "Ink and color | Xuan paper",
-        status: "Available",
-        category: "animal",
-        images: ["https://images.unsplash.com/photo-1502786932785-5c991e63d3fb?q=80&w=2535&auto=format&fit=crop"],
-        likes: 22
-      }
-    ];
+  if (!titleZh) return alert("Please enter Chinese title.");
+  if (!uploadFiles.length) return alert("Please drag & drop images first.");
 
-    for (const s of seeds) {
-      await addDoc(ARTWORKS, { ...s, createdAt: serverTimestamp() });
+  try {
+    // 上传到 Storage
+    const urls = [];
+    for (const f of uploadFiles) {
+      const url = await uploadImageToStorage(f, "artworks");
+      urls.push(url);
     }
-  }
 
-  // ----------------------------
-  // 12) YouTube shorts ID helper
-  // ----------------------------
-  function extractYouTubeId(url) {
-    try {
-      const u = new URL(url);
-      if (u.hostname.includes("youtu.be")) return u.pathname.replace("/", "");
-      if (u.hostname.includes("youtube.com")) {
-        if (u.pathname.startsWith("/shorts/")) return u.pathname.split("/shorts/")[1]?.split("/")[0] || null;
-        const v = u.searchParams.get("v");
-        if (v) return v;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  // ----------------------------
-  // 13) Small wiring you may already have in HTML
-  // ----------------------------
-  // If your HTML has a user button calling openAuthModal, keep it.
-  // But we also support clicking user area to sign out / sign in:
-  // You can manually set your user-auth-section onclick="window.handleUserSectionClick()"
-  // (Optional)
-  const authSection = document.getElementById("user-auth-section");
-  if (authSection) {
-    authSection.addEventListener("click", (e) => {
-      // avoid double if your button already opens modal
-      const t = e.target?.closest("button");
-      if (t && t.getAttribute("onclick")) return;
-      window.handleUserSectionClick();
+    // 写 Firestore
+    await addDoc(collection(db, COL_ARTWORKS), {
+      title_zh: titleZh,
+      title_en: titleEn || titleZh,
+      desc_zh: descZh,
+      desc_en: descEn,
+      category: cat,
+      images: urls,
+      status: "Available",
+      createdAt: serverTimestamp(),
+      createdBy: currentUser()?.uid || null
     });
-  }
 
-  // initial UI
-  applyAdminUI();
-  window.updateAuthUI();
+    document.getElementById("addModal").classList.add("hidden");
+    uploadFiles = [];
+    alert("Published!");
+  } catch (err) {
+    alert("Publish failed: " + err.message);
+  }
+};
+
+// ---------- Modal + delete ----------
+window.deleteArtwork = async () => {
+  if (!isAdmin()) return alert("Admin only");
+  if (!currentArtworkId) return alert("No artwork selected.");
+
+  if (!confirm("Delete this artwork?")) return;
+  try {
+    await deleteDoc(doc(db, COL_ARTWORKS, currentArtworkId));
+    document.getElementById("imgModal").classList.add("hidden");
+    document.body.style.overflow = "auto";
+    alert("Deleted.");
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
+};
+
+function openArtworkModal(art) {
+  currentArtworkId = art.id;
+  const modal = document.getElementById("imgModal");
+  const container = document.getElementById("modalImagesContainer");
+  container.innerHTML = "";
+
+  (art.images || []).forEach(src => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.className = "w-full h-auto object-contain shadow-2xl border-4 border-stone-800 mb-4";
+    container.appendChild(img);
+  });
+
+  document.getElementById("modalTitle").innerText = art.title_zh || "";
+  document.getElementById("modalDesc").innerText = art.desc_zh || "";
+  document.getElementById("modalStatus").innerText = art.status || "";
+
+  // 管理员面板
+  document.getElementById("img-admin-edit-panel")?.classList.toggle("hidden", !isAdmin());
+
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+window.closeModal = () => {
+  document.getElementById("imgModal").classList.add("hidden");
+  document.body.style.overflow = "auto";
+};
 </script>
 
 
