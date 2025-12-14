@@ -48,19 +48,30 @@
     .drop-zone{border:2px dashed var(--seal-red);background:#fff5f5;transition:all .2s;}
     .drop-zone.dragover{background:#ffe0e0;border-color:red;}
     /* YouTube / Video responsive container */
-    .video-frame{
-      width:100%;
-      aspect-ratio:16 / 9;
-      background:#000;
-      border-radius:14px;
-      overflow:hidden;
+    .video-frame {
+      width: 100%;
+      /* aspect-ratio: 16 / 9; Removed fixed ratio to adapt to video content */
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
     }
-    .video-frame iframe,
-    .video-frame video{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
+    .video-frame iframe {
+      width: 100%;
+      aspect-ratio: 16/9;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-frame video {
+      width: 100%;
+      height: auto;
+      max-height: 80vh;
+      display: block;
     }
   </style>
 </head>
@@ -233,6 +244,7 @@
           <label id="artist-upload-overlay" class="hidden absolute inset-0 bg-black/50 items-center justify-center text-white text-xs cursor-pointer">
             <span data-i18n="artist.uploadTip">Admin: Click to upload avatar</span>
             <input id="artist-file-input" type="file" accept="image/*" class="hidden">
+            <input id="video-file-input" type="file" accept="video/*" class="hidden">
           </label>
         </div>
 
@@ -374,79 +386,141 @@
     </div>
   </div>
 
-  <!-- ADMIN PANEL MODAL -->
+  <!-- ADMIN PANEL MODAL (Manager Dashboard) -->
   <div id="adminModal" class="fixed inset-0 z-[90] hidden bg-black/80 flex items-center justify-center p-4">
-    <div class="bg-white p-6 rounded-lg max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto relative">
-      <button id="admin-close" class="absolute top-4 right-4 text-stone-500 hover:text-black">
+    <div class="bg-[#fdfbf7] p-8 rounded-xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto relative border border-stone-200">
+      <button id="admin-close" class="absolute top-6 right-6 text-stone-400 hover:text-[#a83f39] transition-colors">
         <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
-      <h3 class="text-2xl font-bold text-stone-800 mb-4 font-serif">Admin Panel</h3>
+      <div class="flex items-center gap-4 mb-8 border-b border-stone-200 pb-4">
+        <div class="w-12 h-12 bg-[#a83f39] text-white flex items-center justify-center rounded-lg shadow-md">
+            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+        </div>
+        <div>
+            <h3 class="text-2xl font-serif text-stone-800 italic">Gallery Manager</h3>
+            <p class="text-xs text-stone-500 uppercase tracking-widest">Administrator Dashboard</p>
+        </div>
+      </div>
 
       <!-- ADMIN PASSWORD (qinghua666) -->
-      <div id="admin-password-box" class="border border-stone-200 rounded p-4 mb-6">
-        <p class="text-sm text-stone-600 font-serif-text mb-2">Enter admin key to enable admin actions (upload/delete/video/avatar).</p>
-        <div class="flex gap-2">
-          <input id="admin-key" type="password" class="flex-1 border border-stone-300 p-2 rounded font-serif" placeholder="Admin key (qinghua666)">
-          <button id="admin-verify" class="bg-[#a83f39] text-white px-4 rounded font-serif">Verify</button>
+      <div id="admin-password-box" class="bg-white border border-stone-200 rounded-lg p-6 mb-8 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="lock" class="w-5 h-5 text-stone-400"></i>
+            <h4 class="text-stone-700 font-bold font-serif">Security Verification</h4>
         </div>
-        <p id="admin-status" class="mt-2 text-xs text-stone-500"></p>
+        <p class="text-sm text-stone-500 font-serif-text mb-4">Please enter your manager key to unlock administrative features.</p>
+        <div class="flex gap-3">
+          <input id="admin-key" type="password" class="flex-1 bg-stone-50 border border-stone-300 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] transition-colors" placeholder="Enter key...">
+          <button id="admin-verify" class="bg-[#a83f39] text-white px-6 py-2 rounded font-serif hover:bg-red-800 transition-colors shadow-md">Unlock</button>
+        </div>
+        <p id="admin-status" class="mt-3 text-xs font-bold text-[#a83f39] min-h-[1rem]"></p>
       </div>
 
-      <!-- ADD ARTWORK -->
-      <div class="border border-stone-200 rounded p-4 mb-6">
-        <h4 class="text-lg font-bold font-serif text-stone-800 mb-3">Add New Artwork</h4>
+      <div id="admin-dashboard-content" class="hidden opacity-0 transition-opacity duration-500">
+          
+        <!-- ADD ARTWORK -->
+        <div class="bg-white border border-stone-200 rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+                <h4 class="text-lg font-bold font-serif text-stone-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-[#a83f39]"></i>
+                    Add New Collection
+                </h4>
+            </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input type="text" id="new-title-zh" placeholder="Chinese Title" class="w-full border p-2 rounded font-serif">
-          <input type="text" id="new-title-en" placeholder="English Title" class="w-full border p-2 rounded font-serif">
-          <input type="text" id="new-desc-zh" placeholder="Desc (CN): Size | Material" class="w-full border p-2 rounded font-serif">
-          <input type="text" id="new-desc-en" placeholder="Desc (EN): Size | Material" class="w-full border p-2 rounded font-serif">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column: Info -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Title (Chinese)</label>
+                        <input type="text" id="new-title-zh" placeholder="e.g. 荷韵" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Title (English)</label>
+                        <input type="text" id="new-title-en" placeholder="e.g. Lotus Rhythm" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] transition-colors">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                             <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Category</label>
+                             <div class="relative">
+                                 <select id="new-category" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] appearance-none cursor-pointer">
+                                    <option value="flower">Flowers</option>
+                                    <option value="animal">Animals</option>
+                                    <option value="bird_flower">Birds & Flowers</option>
+                                 </select>
+                                 <i data-lucide="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-stone-400 pointer-events-none"></i>
+                             </div>
+                        </div>
+                        <div>
+                             <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Status</label>
+                             <div class="relative">
+                                 <select id="new-status" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] appearance-none cursor-pointer">
+                                    <option value="Available">Available</option>
+                                    <option value="Sold">Sold</option>
+                                    <option value="Reserved">Reserved</option>
+                                 </select>
+                                 <i data-lucide="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-stone-400 pointer-events-none"></i>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Details & Desc -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Description (CN)</label>
+                        <textarea id="new-desc-zh" rows="2" placeholder="尺寸 | 材质 等细节" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] transition-colors"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Description (EN)</label>
+                        <textarea id="new-desc-en" rows="2" placeholder="Size | Material details" class="w-full bg-stone-50 border border-stone-200 p-3 rounded text-sm focus:outline-none focus:border-[#a83f39] transition-colors"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="mt-6">
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Artwork Images</label>
+                <div id="drop-area" class="group w-full h-40 flex flex-col items-center justify-center rounded-lg cursor-pointer bg-stone-50 border-2 border-dashed border-stone-300 hover:border-[#a83f39] hover:bg-[#a83f39]/5 transition-all duration-300 relative">
+                    <div class="flex flex-col items-center text-stone-400 group-hover:text-[#a83f39] transition-colors">
+                         <i data-lucide="upload-cloud" class="w-10 h-10 mb-2"></i>
+                         <p class="text-sm font-medium">Click or Drag & Drop Images</p>
+                         <p class="text-xs opacity-70 mt-1">Supports JPG, PNG (Max 5MB)</p>
+                    </div>
+                    <input type="file" id="fileElem" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple>
+                </div>
+
+                <div id="upload-previews" class="mt-4 flex gap-3 overflow-x-auto min-h-[80px] p-2 border border-stone-100 rounded-lg bg-stone-50/50">
+                    <!-- Previews go here -->
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+                <button id="publish-artwork" class="bg-[#a83f39] text-white px-8 py-3 rounded-lg shadow-lg hover:bg-red-800 hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-serif tracking-wide">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Publish to Gallery
+                </button>
+            </div>
         </div>
 
-        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
-          <select id="new-category" class="w-full border p-2 rounded font-serif">
-            <option value="flower">Flowers</option>
-            <option value="animal">Animals</option>
-            <option value="bird_flower">Birds & Flowers</option>
-          </select>
-
-          <select id="new-status" class="w-full border p-2 rounded font-serif">
-            <option value="Available">Available</option>
-            <option value="Sold">Sold</option>
-            <option value="Reserved">Reserved</option>
-          </select>
+        <!-- USERS LIST -->
+        <div class="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+            <h4 class="text-lg font-bold font-serif text-stone-800 flex items-center gap-2">
+                <i data-lucide="users" class="w-5 h-5 text-stone-600"></i>
+                Registered Clients
+            </h4>
+            <button id="load-users" class="text-xs border border-stone-300 px-4 py-2 rounded-full hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif uppercase tracking-widest">
+                Refresh List
+            </button>
+            </div>
+            <div id="user-list-content" class="bg-stone-50 border border-stone-100 rounded-lg p-4 text-xs space-y-3 max-h-60 overflow-y-auto">
+                <p class="text-stone-400 italic text-center py-4">Click refresh to load user data.</p>
+            </div>
         </div>
 
-        <div id="drop-area" class="drop-zone w-full h-36 mt-3 flex flex-col items-center justify-center rounded cursor-pointer text-stone-500 text-xs p-2 relative bg-stone-50 border-2 border-dashed border-stone-300">
-          <i data-lucide="images" class="w-8 h-8 mb-2 text-stone-300"></i>
-          <p>Drag & Drop Images Here (Storage)</p>
-          <input type="file" id="fileElem" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple>
-        </div>
+      </div> <!-- End dashboard content -->
 
-        <div id="upload-previews" class="mt-3 flex gap-2 overflow-x-auto h-20 border border-stone-200 p-1 rounded"></div>
-
-        <button id="publish-artwork" class="w-full bg-[#a83f39] text-white py-3 rounded mt-3 font-serif hover:bg-red-800">
-          Publish
-        </button>
-
-        <p class="text-xs text-stone-500 mt-2 font-serif-text">
-          Note: Only admin can upload to Storage and publish artwork.
-        </p>
-      </div>
-
-      <!-- USERS -->
-      <div class="border border-stone-200 rounded p-4">
-        <div class="flex items-center justify-between">
-          <h4 class="text-lg font-bold font-serif text-stone-800">Users</h4>
-          <button id="load-users" class="text-xs border border-stone-300 px-3 py-1 rounded hover:border-[#a83f39] hover:text-[#a83f39] transition-colors font-serif">
-            Refresh list
-          </button>
-        </div>
-        <div id="user-list-content" class="mt-3 bg-stone-50 border border-stone-200 rounded p-3 text-xs space-y-2 max-h-56 overflow-y-auto">
-          <p class="text-stone-400">No data yet.</p>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -462,16 +536,38 @@
       </div>
 
       <div class="text-white lg:w-1/3 w-full bg-stone-900/80 p-6 rounded-lg backdrop-blur-md h-fit">
-        <div id="img-admin-edit-panel" class="hidden mb-6 p-4 bg-stone-800 rounded border border-[#a83f39]">
-          <h4 class="text-[#a83f39] font-bold mb-3 font-serif">Admin Controls</h4>
-          <select id="modal-status-select" class="w-full bg-stone-700 text-white p-2 rounded border border-stone-600 font-serif text-xs mb-2">
-            <option value="Available">Available</option>
-            <option value="Sold">Sold</option>
-            <option value="Reserved">Reserved</option>
-          </select>
-          <div class="flex gap-2">
-            <button id="status-update-btn" class="flex-1 bg-green-800 hover:bg-green-700 text-white py-1 px-2 rounded text-sm font-serif">Update Status</button>
-            <button id="delete-btn" class="flex-1 bg-red-800 hover:bg-red-700 text-white py-1 px-2 rounded text-sm font-serif">Delete</button>
+        
+        <!-- Admin Controls (Manager View) -->
+        <div id="img-admin-edit-panel" class="hidden mb-6 bg-stone-800/80 rounded-lg p-4 border border-[#a83f39]/50 shadow-lg">
+          <div class="flex items-center justify-between mb-4 border-b border-stone-700 pb-2">
+              <h4 class="text-[#a83f39] font-bold font-serif text-sm uppercase tracking-widest flex items-center gap-2">
+                  <i data-lucide="settings-2" class="w-4 h-4"></i> Manager Actions
+              </h4>
+          </div>
+          
+          <div class="space-y-3">
+              <div>
+                  <label class="block text-[10px] uppercase text-stone-500 font-bold mb-1 tracking-wider">Update Status</label>
+                  <div class="flex gap-2">
+                      <div class="relative flex-1">
+                        <select id="modal-status-select" class="w-full bg-stone-700 text-white py-2 pl-3 pr-8 rounded text-sm border border-stone-600 focus:outline-none focus:border-[#a83f39] appearance-none cursor-pointer">
+                            <option value="Available">Available</option>
+                            <option value="Sold">Sold</option>
+                            <option value="Reserved">Reserved</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-2 top-2.5 w-4 h-4 text-stone-400 pointer-events-none"></i>
+                      </div>
+                      <button id="status-update-btn" class="bg-[#a83f39] hover:bg-red-700 text-white px-3 py-2 rounded text-xs font-bold uppercase tracking-wide transition-colors">
+                          Save
+                      </button>
+                  </div>
+              </div>
+              
+              <div class="pt-2 border-t border-stone-700/50">
+                  <button id="delete-btn" class="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 py-2 rounded transition-colors text-xs uppercase tracking-widest font-bold">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Collection
+                  </button>
+              </div>
           </div>
         </div>
 
@@ -568,6 +664,8 @@ let selectedArtworkDoc = null;
 
 // admin key (front-end only; not "secure", but fits your GitHub Pages scenario)
 const ADMIN_KEY = "qinghua666";
+// Specific Firebase User ID for the Administrator
+const ADMIN_UID = "xSClMtHPxNYHJ1I5dZ3DNN2gq9l1";
 
 // YouTube Shorts (replaceable by admin)
 const DEFAULT_SHORTS_ID = "zN0VzZRzlqM";
@@ -719,17 +817,34 @@ function applyLang(lang) {
 }
 
 // ===============================
-// Video (YouTube Shorts embed)
+// Video (YouTube Shorts embed OR Uploaded Video)
 // ===============================
-// 注：YouTube iframe 很难做到“真正无缝循环”，我们用 playlist=ID + loop=1 达到循环效果
 async function loadAboutVideo() {
   const cfgRef = doc(db, "siteConfig", "aboutVideo");
   const snap = await getDoc(cfgRef);
+  const data = snap.exists() ? snap.data() : {};
 
-  let shortsId = DEFAULT_SHORTS_ID;
-  if (snap.exists() && snap.data()?.shortsId) shortsId = snap.data().shortsId;
+  // Priority: Uploaded Video URL -> YouTube Shorts ID -> Default
+  if (data.videoUrl) {
+    // Render native video tag
+    $("about-video-container").innerHTML = `
+      <video
+        src="${data.videoUrl}"
+        controls
+        autoplay
+        loop
+        muted
+        playsinline
+        class="w-full h-auto"
+        style="max-height: 80vh;"
+      >
+        Your browser does not support the video tag.
+      </video>
+    `;
+    return;
+  }
 
-  // Shorts embed: use /embed/{id}
+  let shortsId = data.shortsId || DEFAULT_SHORTS_ID;
   const src = `https://www.youtube.com/embed/${shortsId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${shortsId}&rel=0&modestbranding=1`;
 
   $("about-video-container").innerHTML = `
@@ -743,11 +858,43 @@ async function loadAboutVideo() {
   `;
 }
 
-// Admin change video
+// Admin: Upload video file
+async function uploadAboutVideo(file) {
+  if (!currentUser || !isAdmin) { toast("Admin only."); return; }
+  toast("Uploading video... This may take a while.");
+  
+  try {
+    const key = `videos/about_${Date.now()}_${file.name}`;
+    const r = ref(storage, key);
+    await uploadBytes(r, file, { contentType: file.type });
+    const url = await getDownloadURL(r);
+
+    // Save url, clear shortsId to ensure priority
+    await setDoc(doc(db, "siteConfig", "aboutVideo"), { 
+      videoUrl: url, 
+      shortsId: null, // Clear YouTube ID so Video URL takes precedence
+      updatedAt: serverTimestamp() 
+    }, { merge: true });
+    
+    await loadAboutVideo();
+    toast("Video updated successfully.");
+  } catch (e) {
+    console.error(e);
+    const uidInfo = currentUser ? `(User UID: ${currentUser.uid})` : "(Not Signed In)";
+    toast(`Video upload failed: ${e.message}\n${uidInfo}`);
+  }
+}
+
+// Admin: Set YouTube ID (Fallback)
 async function setAboutVideoShortsId(shortsId) {
-  await setDoc(doc(db, "siteConfig", "aboutVideo"), { shortsId, updatedAt: serverTimestamp() }, { merge: true });
+  // Clear videoUrl so YouTube ID takes precedence
+  await setDoc(doc(db, "siteConfig", "aboutVideo"), { 
+    shortsId, 
+    videoUrl: null, 
+    updatedAt: serverTimestamp() 
+  }, { merge: true });
   await loadAboutVideo();
-  toast("Video updated.");
+  toast("Video updated to YouTube source.");
 }
 
 // ===============================
@@ -789,23 +936,46 @@ function setAdminFlag(ok) {
 }
 
 function updateAdminUI() {
-  // Admin button show only when user is signed in
-  if (currentUser) $("admin-btn").classList.remove("hidden");
+  // Determine if effectively admin (either via UID or manual key override)
+  const effectiveAdmin = currentUser && (currentUser.uid === ADMIN_UID || isAdmin);
+
+  // Admin button: Show ONLY if effective admin
+  // (Regular users shouldn't even see the button)
+  if (effectiveAdmin) $("admin-btn").classList.remove("hidden");
   else $("admin-btn").classList.add("hidden");
 
-  // Admin-edit overlay items
-  if (isAdmin && currentUser) {
+  // Admin-edit overlay items (Video edit btn, Avatar upload overlay)
+  if (effectiveAdmin) {
     $("video-edit-btn").classList.remove("hidden");
     $("artist-upload-overlay").classList.remove("hidden");
     $("artist-upload-overlay").classList.add("flex");
+    
+    // Dashboard logic: Hide password box, show content
+    if ($("admin-password-box")) {
+        $("admin-password-box").classList.add("hidden");
+    }
+    if ($("admin-dashboard-content")) {
+        $("admin-dashboard-content").classList.remove("hidden");
+        setTimeout(() => $("admin-dashboard-content").classList.remove("opacity-0"), 50);
+    }
   } else {
+    // NOT Admin
     $("video-edit-btn").classList.add("hidden");
     $("artist-upload-overlay").classList.add("hidden");
     $("artist-upload-overlay").classList.remove("flex");
+
+    // If modal is open (which theoretically they shouldn't reach if button is hidden, 
+    // but just in case they manually opened it or logged out while open):
+    if ($("admin-password-box")) {
+        $("admin-password-box").classList.remove("hidden");
+    }
+    if ($("admin-dashboard-content")) {
+        $("admin-dashboard-content").classList.add("hidden", "opacity-0");
+    }
   }
 
-  // modal admin panel
-  if (isAdmin && currentUser) $("img-admin-edit-panel").classList.remove("hidden");
+  // Modal inner admin panel (Edit/Delete buttons in artwork detail)
+  if (effectiveAdmin) $("img-admin-edit-panel").classList.remove("hidden");
   else $("img-admin-edit-panel").classList.add("hidden");
 }
 
@@ -1109,14 +1279,21 @@ async function uploadArtistAvatar(file) {
     toast("Admin only.");
     return;
   }
-  const key = `avatars/artist_${Date.now()}_${file.name}`;
-  const r = ref(storage, key);
-  await uploadBytes(r, file, { contentType: file.type });
-  const url = await getDownloadURL(r);
+  
+  try {
+    const key = `avatars/artist_${Date.now()}_${file.name}`;
+    const r = ref(storage, key);
+    await uploadBytes(r, file, { contentType: file.type });
+    const url = await getDownloadURL(r);
 
-  await setDoc(doc(db, "siteConfig", "artistProfile"), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
-  $("artist-img").src = url;
-  toast("Avatar updated.");
+    await setDoc(doc(db, "siteConfig", "artistProfile"), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
+    $("artist-img").src = url;
+    toast("Avatar updated.");
+  } catch (e) {
+      console.error(e);
+      const uidInfo = currentUser ? `(User UID: ${currentUser.uid})` : "(Not Signed In)";
+      toast(`Avatar upload failed: ${e.message}\n${uidInfo}`);
+  }
 }
 
 // ===============================
@@ -1127,9 +1304,10 @@ let stagedFiles = [];
 function setupDropZone() {
   const dropArea = $("drop-area");
   const fileElem = $("fileElem");
+  if (!dropArea || !fileElem) return; // Guard clause
 
-  function highlight() { dropArea.classList.add("dragover"); }
-  function unhighlight() { dropArea.classList.remove("dragover"); }
+  function highlight() { dropArea.classList.add("border-[#a83f39]", "bg-[#a83f39]/5"); }
+  function unhighlight() { dropArea.classList.remove("border-[#a83f39]", "bg-[#a83f39]/5"); }
 
   ["dragenter","dragover"].forEach(evt => dropArea.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); highlight(); }));
   ["dragleave","drop"].forEach(evt => dropArea.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); unhighlight(); }));
@@ -1147,6 +1325,12 @@ function setupDropZone() {
     stagedFiles.push(...files);
     renderStagedPreviews();
     fileElem.value = "";
+  });
+  
+  // Make the drop zone clickable to trigger input
+  dropArea.addEventListener("click", (e) => {
+      // Avoid triggering if clicking child elements (like existing buttons if any)
+      if (e.target !== fileElem) fileElem.click();
   });
 }
 
@@ -1208,6 +1392,7 @@ async function publishArtwork() {
 
   // Upload images to Storage
   try {
+    toast("Uploading images and publishing... please wait.");
     const uploaded = await uploadFilesToStorage(stagedFiles);
     const imageUrls = uploaded.map(x => x.url);
     const imagePaths = uploaded.map(x => x.path);
@@ -1236,8 +1421,9 @@ async function publishArtwork() {
     toast("Published!");
   } catch (e) {
     console.error(e);
-    // This is the error you saw: storage/unauthorized
-    toast(`Publish failed: ${e?.message || e}`);
+    // Enhanced error message for debugging permissions
+    const uidInfo = currentUser ? `(User UID: ${currentUser.uid})` : "(Not Signed In)";
+    toast(`Publish failed: ${e?.message || e}\n${uidInfo}\nPlease check Firebase Storage Rules.`);
   }
 }
 
@@ -1462,24 +1648,47 @@ function bindUI() {
   // video change (admin)
   $("video-edit-btn").addEventListener("click", async () => {
     if (!isAdmin || !currentUser) return toast("Admin only.");
-    const input = prompt("Paste YouTube Shorts URL or Shorts ID:");
-    if (!input) return;
+    
+    const choice = prompt("Enter '1' to upload a Video File, or '2' to use a YouTube ID.");
+    if (choice === "1") {
+        $("video-file-input").click();
+        return;
+    }
+    
+    if (choice === "2") {
+        const input = prompt("Paste YouTube Shorts URL or Shorts ID:");
+        if (!input) return;
 
-    // Extract ID from URL like https://www.youtube.com/shorts/xxxx
-    let id = input.trim();
-    const m = id.match(/shorts\/([a-zA-Z0-9_-]{6,})/);
-    if (m) id = m[1];
-    // or watch?v=
-    const m2 = id.match(/v=([a-zA-Z0-9_-]{6,})/);
-    if (m2) id = m2[1];
+        // Extract ID from URL like https://www.youtube.com/shorts/xxxx
+        let id = input.trim();
+        const m = id.match(/shorts\/([a-zA-Z0-9_-]{6,})/);
+        if (m) id = m[1];
+        // or watch?v=
+        const m2 = id.match(/v=([a-zA-Z0-9_-]{6,})/);
+        if (m2) id = m2[1];
 
-    await setAboutVideoShortsId(id);
+        await setAboutVideoShortsId(id);
+    }
+  });
+
+  // video file input change
+  $("video-file-input").addEventListener("change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    // Limit size if needed, e.g. 50MB
+    if (f.size > 50 * 1024 * 1024) {
+        toast("File too large. Please upload video under 50MB.");
+        return;
+    }
+    await uploadAboutVideo(f);
+    e.target.value = "";
   });
 
   // artist avatar upload
   $("artist-file-input").addEventListener("change", async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    toast("Uploading avatar...");
     await uploadArtistAvatar(f);
     e.target.value = "";
   });
@@ -1496,6 +1705,17 @@ function bindUI() {
 // ===============================
 onAuthStateChanged(auth, async (user) => {
   currentUser = user || null;
+  
+  if (currentUser) {
+    // Auto-detect admin via UID
+    if (currentUser.uid === ADMIN_UID) {
+        console.log("Admin auto-recognized via UID.");
+        // We don't strictly need to set isAdmin (local storage flag) 
+        // because updateAdminUI now checks (currentUser.uid === ADMIN_UID || isAdmin)
+        // But we can set it for consistency if we want.
+        isAdmin = true; 
+    }
+  }
 
   // IMPORTANT: avoid "false signed in" alerts
   // We do NOT auto-alert here.
@@ -1504,9 +1724,9 @@ onAuthStateChanged(auth, async (user) => {
   if (currentUser) {
     try { await upsertUserProfile(currentUser); } catch {}
   } else {
-    // not signed in -> force admin false (but keep local flag if you want)
-    // We keep local flag, BUT admin actions still require currentUser
-    // So unauthorized won't happen silently.
+    // Signed out
+    isAdmin = false; // Reset memory flag
+    // We generally keep localStorage flag, but for security via UID, it's safer to rely on UID.
   }
 });
 
